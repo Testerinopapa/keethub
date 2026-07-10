@@ -27,7 +27,6 @@ function buildGameState(game: Chess, mode: GameMode, lastMove?: { from: string; 
   };
 }
 
-// ── Depth-to-elo mapping for Stockfish strength limiting ──────────
 const DIFFICULTY_DEPTH: Record<string, number> = { easy: 5, medium: 10, hard: 15 };
 const DIFFICULTY_ELO: Record<string, number> = { easy: 1350, medium: 1850, hard: 2850 };
 
@@ -46,16 +45,19 @@ export function ChessProvider({ children }: { children: React.ReactNode }) {
   });
   const [isAIThinking, setIsAIThinking] = useState(false);
   const mountedRef = useRef(true);
-  const aiTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const gameRef = useRef(game);
+  gameRef.current = game;
 
   useEffect(() => {
-    return () => { mountedRef.current = false; if (aiTimerRef.current) clearTimeout(aiTimerRef.current); };
+    return () => { mountedRef.current = false; };
   }, []);
 
+  // Clone the game so React always sees a new reference on state updates
   const updateState = useCallback(
     (g: Chess, mode: GameMode, lastMove?: { from: string; to: string }) => {
-      setGameState(buildGameState(g, mode, lastMove));
-      setGame(g);
+      const clone = new Chess(g.fen());
+      setGameState(buildGameState(clone, mode, lastMove));
+      setGame(clone);
     },
     [],
   );
@@ -63,15 +65,16 @@ export function ChessProvider({ children }: { children: React.ReactNode }) {
   const makeMove = useCallback(
     (from: string, to: string, promotion?: string): boolean => {
       try {
-        const move = game.move({ from, to, promotion: promotion as "q" | "r" | "b" | "n" | undefined });
+        const g = gameRef.current;
+        const move = g.move({ from, to, promotion: promotion as "q" | "r" | "b" | "n" | undefined });
         if (!move) return false;
-        updateState(game, aiConfig.enabled ? "ai" : "local", { from, to });
+        updateState(g, aiConfig.enabled ? "ai" : "local", { from, to });
         return true;
       } catch {
         return false;
       }
     },
-    [game, aiConfig.enabled, updateState],
+    [aiConfig.enabled, updateState],
   );
 
   const resetGame = useCallback(() => {
@@ -93,27 +96,29 @@ export function ChessProvider({ children }: { children: React.ReactNode }) {
 
   const undoMove = useCallback((): boolean => {
     try {
-      if (game.history().length === 0) return false;
-      game.undo();
-      updateState(game, aiConfig.enabled ? "ai" : "local");
+      const g = gameRef.current;
+      if (g.history().length === 0) return false;
+      g.undo();
+      updateState(g, aiConfig.enabled ? "ai" : "local");
       return true;
     } catch {
       return false;
     }
-  }, [game, aiConfig.enabled, updateState]);
+  }, [aiConfig.enabled, updateState]);
 
   const getLegalMoves = useCallback(
     (square?: string): string[] => {
       try {
-        return game.moves({ square, verbose: true }).map((m) => m.to);
+        return gameRef.current.moves({ square, verbose: true }).map((m) => m.to);
       } catch {
         return [];
       }
     },
-    [game],
+    [],
   );
 
-  const isGameOver = useCallback((): boolean => game.isGameOver(), [game]);
+  const isGameOver = useCallback((): boolean => gameRef.current.isGameOver(), []);
+
   const setGameMode = useCallback((_mode: GameMode) => {}, []);
 
   const isAITurn = useCallback((): boolean => {
@@ -122,52 +127,65 @@ export function ChessProvider({ children }: { children: React.ReactNode }) {
   }, [aiConfig, gameState.turn, isGameOver]);
 
   const makeAIMove = useCallback(async () => {
-    if (isAIThinking || game.isGameOver() || !aiConfig.enabled) return;
-    if (game.turn() !== (aiConfig.color === "white" ? "w" : "b")) return;
+    const g = gameRef.current;
+    console.log("[AI] makeAIMove called — turn:", g.turn(), "ai color:", aiConfig.color);
+    if (isAIThinking || g.isGameOver() || !aiConfig.enabled) return;
+    if (g.turn() !== (aiConfig.color === "white" ? "w" : "b")) return;
 
-    console.log("[AI] makeAIMove called — requesting best move from Stockfish...");
+    console.log("[AI] Requesting best move from Stockfish...");
     setIsAIThinking(true);
 
     try {
       const depth = DIFFICULTY_DEPTH[aiConfig.difficulty] ?? 10;
       const elo = DIFFICULTY_ELO[aiConfig.difficulty];
-      const fen = game.fen();
+      const fen = g.fen();
+      console.log("[AI] FEN:", fen);
       const uci = await stockfishEngine.getBestMove(fen, depth, elo);
 
       if (!mountedRef.current) return;
+      console.log("[AI] Engine returned UCI:", uci);
 
       const from = uci.slice(0, 2);
       const to = uci.slice(2, 4);
       const promotion = uci.length > 4 ? uci[4] : undefined;
 
-      // Validate move is legal
-      const legal = game.moves({ verbose: true });
+      // Re-read game from ref (may have been replaced by a clone after render)
+      const currentGame = gameRef.current;
+      const legal = currentGame.moves({ verbose: true });
+      console.log("[AI] Legal moves count:", legal.length, "checking", from, to);
+
       const isValid = legal.some((m) => m.from === from && m.to === to);
+      console.log("[AI] Move valid?", isValid);
       if (isValid) {
-        console.log("[AI] Stockfish move accepted:", from, to, promotion || "");
-        game.move({ from, to, promotion: promotion as "q" | "r" | "b" | "n" | undefined });
-        updateState(game, "ai", { from, to });
+        console.log("[AI] Applying move:", from, to, promotion || "");
+        currentGame.move({ from, to, promotion: promotion as "q" | "r" | "b" | "n" | undefined });
+        updateState(currentGame, "ai", { from, to });
+        console.log("[AI] Move applied — new FEN:", currentGame.fen());
       } else if (legal.length > 0) {
-        console.warn("[AI] Stockfish returned invalid move, using fallback");
-        // Fallback: first legal move
+        console.warn("[AI] Invalid move, using fallback:", legal[0].from, legal[0].to);
         const fb = legal[0];
-        game.move({ from: fb.from, to: fb.to, promotion: fb.promotion });
-        updateState(game, "ai", { from: fb.from, to: fb.to });
+        currentGame.move({ from: fb.from, to: fb.to, promotion: fb.promotion });
+        updateState(currentGame, "ai", { from: fb.from, to: fb.to });
+      } else {
+        console.warn("[AI] No legal moves available — game likely over");
       }
     } catch (e) {
-      console.error("[AI] Stockfish engine error:", e);
-      // Engine error — fallback to random legal move
+      console.error("[AI] Engine error:", e);
       if (!mountedRef.current) return;
-      const legal = game.moves({ verbose: true });
+      const g2 = gameRef.current;
+      const legal = g2.moves({ verbose: true });
       if (legal.length > 0) {
         const fb = legal[Math.floor(Math.random() * legal.length)];
-        game.move({ from: fb.from, to: fb.to, promotion: fb.promotion });
-        updateState(game, "ai", { from: fb.from, to: fb.to });
+        g2.move({ from: fb.from, to: fb.to, promotion: fb.promotion });
+        updateState(g2, "ai", { from: fb.from, to: fb.to });
       }
     } finally {
-      if (mountedRef.current) setIsAIThinking(false);
+      if (mountedRef.current) {
+        console.log("[AI] Setting isAIThinking = false");
+        setIsAIThinking(false);
+      }
     }
-  }, [game, aiConfig, updateState, isGameOver, isAIThinking]);
+  }, [aiConfig, updateState, isGameOver, isAIThinking]);
 
   const value = useMemo<ChessContextType>(
     () => ({

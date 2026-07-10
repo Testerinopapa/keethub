@@ -116,8 +116,10 @@ function PlayTab({ gameId, accent }: { gameId: string; accent: string }) {
 
   // Auto-trigger AI move
   useEffect(() => {
+    console.log("[PlayTab effect] turn:", game.turn, "aiColor:", aiConfig.color, "enabled:", aiConfig.enabled, "thinking:", isAIThinking);
     if (aiConfig.enabled && !isAIThinking && !game.inCheckmate && !game.inDraw) {
       if (game.turn === aiConfig.color) {
+        console.log("[PlayTab effect] Scheduling AI move in 250ms");
         const timer = setTimeout(makeAIMove, 250);
         return () => clearTimeout(timer);
       }

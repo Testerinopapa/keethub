@@ -57,8 +57,8 @@ export function ChessProvider({ children }: { children: React.ReactNode }) {
   // Stable callback ref for the engine — always applies move to current game
   const onEngineMoveRef = useRef<EngineCallback>((_) => {});
   onEngineMoveRef.current = (uci: string) => {
+    console.log("[AI] Callback invoked, mounted:", mountedRef.current, "uci:", uci);
     if (!mountedRef.current) return;
-    console.log("[AI] Engine callback with UCI:", uci);
 
     const from = uci.slice(0, 2);
     const to = uci.slice(2, 4);

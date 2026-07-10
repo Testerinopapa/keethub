@@ -102,12 +102,18 @@ function LibraryPage() {
   );
 }
 
+const PORTED_GAMES: Record<string, string> = {
+  "ping-pong": "/hub/games/ping-pong",
+};
+
 function GameCard({ game }: { game: Game }) {
   const accent = game.accent_color ?? "#a78bfa";
+  const route = PORTED_GAMES[game.slug];
   return (
     <Link
-      to="/hub/games/$slug"
-      params={{ slug: game.slug }}
+      {...(route
+        ? { to: route as any }
+        : { to: "/hub/games/$slug" as const, params: { slug: game.slug } })}
       className="group rounded-2xl overflow-hidden border border-border bg-game-card hover:border-primary/50 transition-all hover:-translate-y-1"
     >
       <div

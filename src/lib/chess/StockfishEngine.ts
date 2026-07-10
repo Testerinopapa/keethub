@@ -104,13 +104,19 @@ class StockfishEngine {
 
     const best = text.match(/^bestmove\s+(\S+)/);
     if (best) {
-      console.log("[SF] bestmove:", best[1]);
+      console.log("[SF] bestmove:", best[1], "| pending:", !!this.pending);
       if (this.searchTimer) { clearTimeout(this.searchTimer); this.searchTimer = null; }
       const uci = best[1];
       if (this.pending) {
         const cb = this.pending.callback;
         this.pending = null;
-        cb(uci);
+        try {
+          cb(uci);
+        } catch (e) {
+          console.error("[SF] callback threw:", e);
+        }
+      } else {
+        console.warn("[SF] bestmove arrived but no pending job — silent drop");
       }
       if (this.queue.length > 0) {
         const job = this.queue.shift()!;

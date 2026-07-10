@@ -5,13 +5,13 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "GameHub — Play. Compete. Level up." },
+      { title: "Children's ESL GameHub — Play. Compete. Level up." },
       {
         name: "description",
         content:
           "Your home base for browser games. Jump between titles, track your scores, and climb the leaderboards.",
       },
-      { property: "og:title", content: "GameHub — Play. Compete. Level up." },
+      { property: "og:title", content: "Children's ESL GameHub — Play. Compete. Level up." },
       {
         property: "og:description",
         content:

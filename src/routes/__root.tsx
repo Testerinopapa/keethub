@@ -93,23 +93,25 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       meta: [
         { charSet: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1" },
-        { title: "GameHub — Play. Compete. Level up." },
+        { title: "Children's ESL GameHub — Play. Compete. Level up." },
         {
           name: "description",
           content:
-            "A modern game hub for browser games. Play, track scores, and climb the leaderboards.",
+            "Your home base for browser games. Jump between titles, track your scores, and climb the leaderboards.",
         },
         {
           property: "og:title",
-          content: "GameHub — Play. Compete. Level up.",
+          content: "Children's ESL GameHub — Play. Compete. Level up.",
         },
         {
           property: "og:description",
           content:
-            "A modern game hub for browser games. Play, track scores, and climb the leaderboards.",
+            "Your home base for browser games. Jump between titles, track your scores, and climb the leaderboards.",
         },
         { property: "og:type", content: "website" },
         { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: "Children's ESL GameHub — Play. Compete. Level up." },
+        { name: "twitter:description", content: "Your home base for browser games. Jump between titles, track your scores, and climb the leaderboards." },
       ],
       links: [
         { rel: "stylesheet", href: appCss },

@@ -19,6 +19,7 @@ import { Route as AuthenticatedHubIndexRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedHubProfileRouteImport } from './routes/_authenticated/hub.profile'
 import { Route as AuthenticatedHubLeaderboardRouteImport } from './routes/_authenticated/hub.leaderboard'
 import { Route as AuthenticatedHubGamesSlugRouteImport } from './routes/_authenticated/hub.games.$slug'
+import { Route as AuthenticatedHubGamesPingPongRouteImport } from './routes/_authenticated/hub.games.ping-pong'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -71,6 +72,12 @@ const AuthenticatedHubGamesSlugRoute =
     path: '/games/$slug',
     getParentRoute: () => AuthenticatedHubRoute,
   } as any)
+const AuthenticatedHubGamesPingPongRoute =
+  AuthenticatedHubGamesPingPongRouteImport.update({
+    id: '/games/ping-pong',
+    path: '/games/ping-pong',
+    getParentRoute: () => AuthenticatedHubRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/hub/profile': typeof AuthenticatedHubProfileRoute
   '/hub/': typeof AuthenticatedHubIndexRoute
   '/hub/games/$slug': typeof AuthenticatedHubGamesSlugRoute
+  '/hub/games/ping-pong': typeof AuthenticatedHubGamesPingPongRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -92,6 +100,7 @@ export interface FileRoutesByTo {
   '/hub/profile': typeof AuthenticatedHubProfileRoute
   '/hub': typeof AuthenticatedHubIndexRoute
   '/hub/games/$slug': typeof AuthenticatedHubGamesSlugRoute
+  '/hub/games/ping-pong': typeof AuthenticatedHubGamesPingPongRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -105,6 +114,7 @@ export interface FileRoutesById {
   '/_authenticated/hub/profile': typeof AuthenticatedHubProfileRoute
   '/_authenticated/hub/': typeof AuthenticatedHubIndexRoute
   '/_authenticated/hub/games/$slug': typeof AuthenticatedHubGamesSlugRoute
+  '/_authenticated/hub/games/ping-pong': typeof AuthenticatedHubGamesPingPongRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/hub/profile'
     | '/hub/'
     | '/hub/games/$slug'
+    | '/hub/games/ping-pong'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/hub/profile'
     | '/hub'
     | '/hub/games/$slug'
+    | '/hub/games/ping-pong'
   id:
     | '__root__'
     | '/'
@@ -140,6 +152,7 @@ export interface FileRouteTypes {
     | '/_authenticated/hub/profile'
     | '/_authenticated/hub/'
     | '/_authenticated/hub/games/$slug'
+    | '/_authenticated/hub/games/ping-pong'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -221,6 +234,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHubGamesSlugRouteImport
       parentRoute: typeof AuthenticatedHubRoute
     }
+    '/_authenticated/hub/games/ping-pong': {
+      id: '/_authenticated/hub/games/ping-pong'
+      path: '/games/ping-pong'
+      fullPath: '/hub/games/ping-pong'
+      preLoaderRoute: typeof AuthenticatedHubGamesPingPongRouteImport
+      parentRoute: typeof AuthenticatedHubRoute
+    }
   }
 }
 
@@ -229,6 +249,7 @@ interface AuthenticatedHubRouteChildren {
   AuthenticatedHubProfileRoute: typeof AuthenticatedHubProfileRoute
   AuthenticatedHubIndexRoute: typeof AuthenticatedHubIndexRoute
   AuthenticatedHubGamesSlugRoute: typeof AuthenticatedHubGamesSlugRoute
+  AuthenticatedHubGamesPingPongRoute: typeof AuthenticatedHubGamesPingPongRoute
 }
 
 const AuthenticatedHubRouteChildren: AuthenticatedHubRouteChildren = {
@@ -236,6 +257,7 @@ const AuthenticatedHubRouteChildren: AuthenticatedHubRouteChildren = {
   AuthenticatedHubProfileRoute: AuthenticatedHubProfileRoute,
   AuthenticatedHubIndexRoute: AuthenticatedHubIndexRoute,
   AuthenticatedHubGamesSlugRoute: AuthenticatedHubGamesSlugRoute,
+  AuthenticatedHubGamesPingPongRoute: AuthenticatedHubGamesPingPongRoute,
 }
 
 const AuthenticatedHubRouteWithChildren =

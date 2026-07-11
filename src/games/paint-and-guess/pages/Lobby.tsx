@@ -20,7 +20,7 @@ interface WordPack {
 }
 
 export default function Lobby({ onEnterRoom }: { onEnterRoom: () => void }) {
-  const { createRoom, joinRoom, isConnected } = useGame();
+  const { createRoom, joinRoom, isConnected, socket } = useGame();
   const [roomId, setRoomId] = useState("");
   const [playerName, setPlayerName] = useState("");
   const [roomName, setRoomName] = useState("");
@@ -108,13 +108,26 @@ export default function Lobby({ onEnterRoom }: { onEnterRoom: () => void }) {
   };
 
   if (!isConnected) {
+    const showRetry = socket?.disconnected === true;
+
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-sm w-full text-center">
           <CardHeader>
-            <CardTitle>Connecting...</CardTitle>
-            <CardDescription>Please wait while we connect to the server</CardDescription>
+            <CardTitle>
+              {showRetry ? "Server Unreachable" : "Connecting..."}
+            </CardTitle>
+            <CardDescription>
+              {showRetry
+                ? "The game server appears to be offline or waking up. Render free-tier servers can take up to 60 seconds to start."
+                : "Please wait while we connect to the server..."}
+            </CardDescription>
           </CardHeader>
+          {showRetry && (
+            <CardContent>
+              <Button onClick={() => socket?.connect()}>Retry Connection</Button>
+            </CardContent>
+          )}
         </Card>
       </div>
     );

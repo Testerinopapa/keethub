@@ -7,7 +7,7 @@ interface UseCanvasSyncOptions {
   isDrawer: boolean;
   isGameActive: boolean;
   roundNumber: number;
-  isCanvasValid: (canvas: FabricCanvas | null) => boolean;
+  isCanvasValid: (canvas: FabricCanvas | null) => canvas is FabricCanvas;
   isReceivingRef: React.MutableRefObject<boolean>;
 }
 
@@ -94,6 +94,7 @@ export function useCanvasSync({
     const finalizedPaths = new Set<string>();
     // Track brush properties (opacity, hardness) for each path
     const pathProperties = new Map<string, { opacity: number; hardness: number; strokeWidth: number }>();
+    const accumulatedPathPoints = new Map<string, number[][]>();
     // Buffer path-update events that arrive after path-complete (for network latency handling)
     const pendingPathCompletes = new Map<string, {
       event: any;
@@ -287,12 +288,12 @@ export function useCanvasSync({
               selectable: false,
               evented: false,
               objectCaching: false,
-              shadow: shadowBlur > 0 ? {
+              shadow: (shadowBlur > 0 ? {
                 blur: shadowBlur,
                 offsetX: 0,
                 offsetY: 0,
                 color: event.data.stroke || "#000000",
-              } : null,
+              } : null) as any,
             });
 
             activePaths.set(event.pathId, path);

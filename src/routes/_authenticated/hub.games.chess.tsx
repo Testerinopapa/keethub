@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { queryOptions, useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Trophy, Users, Bot, Puzzle, Lightbulb, Eye, SkipForward, RotateCcw } from "lucide-react";
+import { ArrowLeft, Trophy, Users, Bot, Puzzle, Lightbulb, Eye, SkipForward, RotateCcw, Crown, Play } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useEffect, useRef } from "react";
 import { getGameBySlug, type Game } from "@/lib/games.functions";
@@ -10,11 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ChessProvider, useChess } from "@/lib/chess/ChessContext";
 import { ChessBoard } from "@/lib/chess/ChessBoard";
 import { GameInfo } from "@/lib/chess/GameInfo";
 import { PuzzleProvider, usePuzzle } from "@/lib/chess/PuzzleContext";
 import { PUZZLES } from "@/lib/chess/puzzles";
+import { OPPONENTS, CATEGORY_LABELS, getOpponentById, type Opponent } from "@/lib/chess/opponents";
 import { LOCAL_GAMES } from "@/lib/local-games";
 
 // ── Route ─────────────────────────────────────────────────────────
@@ -148,68 +150,140 @@ function PlayTab({ gameId, accent }: { gameId: string; accent: string }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [selectedOpponent, setSelectedOpponent] = useState<Opponent | null>(null);
+  const [botCategory, setBotCategory] = useState("beginner");
+
   const handleSetMode = (m: "local" | "ai") => {
     setMode(m);
     if (m === "local") {
-      setAIConfig({ enabled: false, color: "black", difficulty: "medium", depth: 3 });
+      setAIConfig({ enabled: false, color: "black", depth: 3 });
+      setSelectedOpponent(null);
     }
   };
 
-  const handleStartAI = (difficulty: "easy" | "medium" | "hard") => {
+  const handleSelectOpponent = (opponent: Opponent) => {
+    setSelectedOpponent(opponent);
+  };
+
+  const handleStartAI = () => {
+    if (!selectedOpponent) return;
     setMode("ai");
-    setAIConfig({ enabled: true, color: "black", difficulty, depth: difficulty === "easy" ? 1 : difficulty === "medium" ? 2 : 3 });
+    setAIConfig({
+      enabled: true,
+      color: selectedOpponent.color || "black",
+      depth: selectedOpponent.depth,
+      elo: selectedOpponent.elo,
+      opponentId: selectedOpponent.id,
+    });
     resetGame();
   };
 
-  const difficultyLabel = aiConfig.difficulty === "easy" ? "Easy" : aiConfig.difficulty === "hard" ? "Hard" : "Medium";
+  const opponentLabel = selectedOpponent
+    ? `${selectedOpponent.name} (${selectedOpponent.rating})`
+    : aiConfig.opponentId
+      ? getOpponentById(aiConfig.opponentId)?.name ?? "AI"
+      : "AI";
 
   // ── Mobile layout ───────────────────────────────────────────────
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
   return (
     <div>
-      {/* Mode selector (when AI not started) */}
+      {/* Mode selector + Bot grid (when AI not started) */}
       {!aiConfig.enabled && (
         <Card className="mb-4">
           <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant={mode === "local" ? "default" : "outline"}
-                  onClick={() => handleSetMode("local")}
-                >
-                  <Users className="w-4 h-4 mr-1" /> Two Player
-                </Button>
-                <Button
-                  size="sm"
-                  variant={mode === "ai" ? "default" : "outline"}
-                  onClick={() => handleSetMode("ai")}
-                >
-                  <Bot className="w-4 h-4 mr-1" /> VS AI
-                </Button>
-              </div>
-              {mode === "ai" && (
-                <div className="flex gap-2">
-                  {(["easy", "medium", "hard"] as const).map((d) => (
-                    <Button
-                      key={d}
-                      size="sm"
-                      variant="outline"
-                      className="capitalize"
-                      onClick={() => handleStartAI(d)}
-                    >
-                      {d}
-                    </Button>
-                  ))}
-                </div>
-              )}
+            <div className="flex gap-2 mb-4">
+              <Button
+                size="sm"
+                variant={mode === "local" ? "default" : "outline"}
+                onClick={() => handleSetMode("local")}
+              >
+                <Users className="w-4 h-4 mr-1" /> Two Player
+              </Button>
+              <Button
+                size="sm"
+                variant={mode === "ai" ? "default" : "outline"}
+                onClick={() => handleSetMode("ai")}
+              >
+                <Bot className="w-4 h-4 mr-1" /> VS AI
+              </Button>
               {mode === "local" && !isMobile && (
-                <Button size="sm" variant="ghost" onClick={resetGame}>
+                <Button size="sm" variant="ghost" className="ml-auto" onClick={resetGame}>
                   <RotateCcw className="w-4 h-4 mr-1" /> New Game
                 </Button>
               )}
             </div>
+
+            {mode === "ai" && (
+              <>
+                {/* Category tabs */}
+                <div className="flex gap-1 mb-3 overflow-x-auto pb-1">
+                  {Object.keys(OPPONENTS).map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setBotCategory(cat)}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-full border transition whitespace-nowrap ${
+                        botCategory === cat
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "border-border text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {CATEGORY_LABELS[cat]}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Bot grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mb-3">
+                  {OPPONENTS[botCategory].map((opp) => {
+                    const isSelected = selectedOpponent?.id === opp.id;
+                    return (
+                      <button
+                        key={opp.id}
+                        onClick={() => handleSelectOpponent(opp)}
+                        className={`relative p-3 rounded-xl border-2 transition-all text-left ${
+                          isSelected
+                            ? "border-primary bg-primary/10 ring-1 ring-primary/50"
+                            : "border-border hover:border-primary/40 hover:bg-secondary/50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="relative flex-shrink-0">
+                            <Avatar className="w-10 h-10">
+                              <AvatarImage src={opp.avatar} alt={opp.name} />
+                              <AvatarFallback className="text-xs">{opp.name[0]}</AvatarFallback>
+                            </Avatar>
+                            {opp.featured && (
+                              <Crown className="absolute -top-1 -right-1 w-4 h-4 text-yellow-400 drop-shadow" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate">{opp.name}</p>
+                            <p className="text-xs text-muted-foreground">{opp.rating}</p>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2 line-clamp-2 leading-relaxed">
+                          {opp.description}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Start button */}
+                <Button
+                  onClick={handleStartAI}
+                  disabled={!selectedOpponent}
+                  className="w-full glow-primary"
+                >
+                  <Play className="w-4 h-4 mr-1" fill="currentColor" />
+                  {selectedOpponent
+                    ? `Play vs ${selectedOpponent.name}`
+                    : "Choose an opponent"}
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
       )}
@@ -219,7 +293,7 @@ function PlayTab({ gameId, accent }: { gameId: string; accent: string }) {
         <div className="flex items-center gap-3 mb-4 px-1">
           <Bot className="w-4 h-4 text-primary" />
           <span className="text-sm">
-            VS AI ({difficultyLabel})
+            VS {opponentLabel}
             {aiConfig.color === "black" ? " — You play White" : " — You play Black"}
           </span>
           <span className="text-xs text-muted-foreground ml-auto">

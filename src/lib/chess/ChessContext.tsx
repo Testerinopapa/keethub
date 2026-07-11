@@ -40,7 +40,6 @@ export function ChessProvider({ children }: { children: React.ReactNode }) {
   const [aiConfig, setAIConfig] = useState<AIConfig>({
     enabled: false,
     color: "black",
-    difficulty: "medium",
     depth: 10,
   });
   const [isAIThinking, setIsAIThinking] = useState(false);
@@ -158,10 +157,9 @@ export function ChessProvider({ children }: { children: React.ReactNode }) {
     console.log("[AI] Requesting move...");
     setIsAIThinking(true);
 
-    const depth = DIFFICULTY_DEPTH[cfg.difficulty] ?? 10;
-    const elo = DIFFICULTY_ELO[cfg.difficulty];
+    const depth = cfg.depth ?? (DIFFICULTY_DEPTH[cfg.difficulty ?? "medium"] ?? 10);
+    const elo = cfg.elo ?? DIFFICULTY_ELO[cfg.difficulty ?? "medium"];
     const fen = g.fen();
-    console.log("[AI] FEN:", fen);
 
     stockfishEngine.requestMove(fen, depth, elo, onEngineMoveRef.current);
   }, [isAIThinking]);

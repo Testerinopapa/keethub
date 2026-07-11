@@ -32,8 +32,10 @@ export interface GameState {
 export interface AIConfig {
   enabled: boolean;
   color: Side;
-  difficulty: "easy" | "medium" | "hard";
+  difficulty?: "easy" | "medium" | "hard";
   depth: number;
+  elo?: number;
+  opponentId?: string;
 }
 
 export interface Puzzle {

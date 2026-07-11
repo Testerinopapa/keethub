@@ -355,9 +355,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const leaveRoom = useCallback(() => {
     if (gameState.roomId) {
-      supabase.rpc("leave_paint_room", {
-        room_id: gameState.roomId,
-      }).catch(() => {});
+      void (async () => {
+        try {
+          await supabase.rpc("leave_paint_room", {
+            room_id: gameState.roomId,
+          });
+        } catch {
+          // Best-effort cleanup; local state is reset regardless.
+        }
+      })();
       leaveRoomChannel(gameState.roomId);
     }
     setGameState(createInitialGameState());

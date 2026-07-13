@@ -1,11 +1,9 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowLeft, Trophy, Play } from "lucide-react";
-import { toast } from "sonner";
 import { useState } from "react";
 import { getGameBySlug } from "@/lib/games.functions";
-import { getGameLeaderboard, submitScore } from "@/lib/scores.functions";
+import { getGameLeaderboard } from "@/lib/scores.functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -46,22 +44,8 @@ function GameDetail() {
   const { slug } = Route.useParams();
   const { data: game } = useSuspenseQuery(gameQuery(slug));
   const { data: leaderboard } = useSuspenseQuery(leaderboardQuery(game?.id));
-  const queryClient = useQueryClient();
-  const submitScoreFn = useServerFn(submitScore);
   const [playing, setPlaying] = useState(false);
   const [score, setScore] = useState(0);
-
-  const mutate = useMutation({
-    mutationFn: async (finalScore: number) => {
-      if (!game) return;
-      await submitScoreFn({ data: { gameId: game.id, score: finalScore } });
-    },
-    onSuccess: () => {
-      toast.success("Score submitted!");
-      queryClient.invalidateQueries({ queryKey: ["game-leaderboard", game?.id] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
 
   if (!game) return null;
   const accent = game.accent_color ?? "#a78bfa";
@@ -85,12 +69,8 @@ function GameDetail() {
         <Badge variant="secondary" className="mb-4">
           {game.category}
         </Badge>
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-          {game.title}
-        </h1>
-        <p className="mt-3 text-muted-foreground max-w-2xl">
-          {game.description}
-        </p>
+        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">{game.title}</h1>
+        <p className="mt-3 text-muted-foreground max-w-2xl">{game.description}</p>
         <Button
           size="lg"
           className="mt-6 glow-primary"
@@ -111,8 +91,7 @@ function GameDetail() {
               <div className="text-center p-8">
                 <div className="text-6xl mb-3">🎮</div>
                 <p className="text-muted-foreground">
-                  Press <span className="text-foreground">Launch game</span> to
-                  start playing.
+                  Press <span className="text-foreground">Launch game</span> to start playing.
                 </p>
               </div>
             ) : (
@@ -121,7 +100,6 @@ function GameDetail() {
                 score={score}
                 onScoreChange={setScore}
                 onFinish={() => {
-                  mutate.mutate(score);
                   setPlaying(false);
                 }}
               />
@@ -135,25 +113,16 @@ function GameDetail() {
             <h2 className="font-semibold">Top players</h2>
           </div>
           {leaderboard.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No scores yet — be the first!
-            </p>
+            <p className="text-sm text-muted-foreground">No scores yet — be the first!</p>
           ) : (
             <ol className="space-y-2">
               {leaderboard.map((row, i) => (
-                <li
-                  key={row.id}
-                  className="flex items-center justify-between text-sm py-1"
-                >
+                <li key={row.id} className="flex items-center justify-between text-sm py-1">
                   <span className="flex items-center gap-3">
-                    <span className="w-5 text-xs text-muted-foreground tabular-nums">
-                      {i + 1}
-                    </span>
+                    <span className="w-5 text-xs text-muted-foreground tabular-nums">{i + 1}</span>
                     <span className="truncate">{row.username ?? "anon"}</span>
                   </span>
-                  <span className="font-semibold tabular-nums">
-                    {row.score.toLocaleString()}
-                  </span>
+                  <span className="font-semibold tabular-nums">{row.score.toLocaleString()}</span>
                 </li>
               ))}
             </ol>
@@ -191,8 +160,7 @@ function PlaceholderGameSurface({
       </div>
       <div className="border-t border-border p-3 flex items-center justify-between bg-background/40">
         <span className="text-sm">
-          Score:{" "}
-          <span className="font-bold tabular-nums text-primary">{score}</span>
+          Score: <span className="font-bold tabular-nums text-primary">{score}</span>
         </span>
         <Button size="sm" variant="outline" onClick={onFinish}>
           Submit score

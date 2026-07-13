@@ -1,7 +1,19 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { queryOptions, useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Trophy, Users, Bot, Puzzle, Lightbulb, Eye, SkipForward, RotateCcw, Crown, Play } from "lucide-react";
+import {
+  ArrowLeft,
+  Trophy,
+  Users,
+  Bot,
+  Puzzle,
+  Lightbulb,
+  Eye,
+  SkipForward,
+  RotateCcw,
+  Crown,
+  Play,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useState, useEffect, useRef } from "react";
 import { getGameBySlug, type Game } from "@/lib/games.functions";
@@ -22,7 +34,7 @@ import { LOCAL_GAMES } from "@/lib/local-games";
 
 // ── Route ─────────────────────────────────────────────────────────
 
-const CHESS_LOCAL: Game = LOCAL_GAMES.find(g => g.slug === "chess")!.data;
+const CHESS_LOCAL: Game = LOCAL_GAMES.find((g) => g.slug === "chess")!.data;
 
 const gameQuery = queryOptions({
   queryKey: ["game", "chess"],
@@ -72,7 +84,9 @@ function ChessPage() {
           background: `radial-gradient(circle at 30% 20%, ${accent}25, transparent 55%), linear-gradient(135deg, ${accent}10, oklch(0.20 0.03 268))`,
         }}
       >
-        <Badge variant="secondary" className="mb-3">{game.category}</Badge>
+        <Badge variant="secondary" className="mb-3">
+          {game.category}
+        </Badge>
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">{game.title}</h1>
         <p className="text-muted-foreground text-sm max-w-lg mx-auto">{game.description}</p>
       </div>
@@ -110,16 +124,27 @@ function ChessPage() {
 // ── Play tab ──────────────────────────────────────────────────────
 
 function PlayTab({ gameId, accent }: { gameId: string; accent: string }) {
-  const { game, makeMove, aiConfig, setAIConfig, resetGame, isAIThinking, isAITurn, makeAIMove } = useChess();
+  const { game, makeMove, aiConfig, setAIConfig, resetGame, isAIThinking, isAITurn, makeAIMove } =
+    useChess();
   const queryClient = useQueryClient();
   const submitScoreFn = useServerFn(submitScore);
   const [mode, setMode] = useState<"local" | "ai">("local");
   const [orientation, setOrientation] = useState<"white" | "black">("white");
+  const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const prevTurn = useRef(game.turn);
 
   // Auto-trigger AI move
   useEffect(() => {
-    console.log("[PlayTab effect] turn:", game.turn, "aiColor:", aiConfig.color, "enabled:", aiConfig.enabled, "thinking:", isAIThinking);
+    console.log(
+      "[PlayTab effect] turn:",
+      game.turn,
+      "aiColor:",
+      aiConfig.color,
+      "enabled:",
+      aiConfig.enabled,
+      "thinking:",
+      isAIThinking,
+    );
     if (aiConfig.enabled && !isAIThinking && !game.inCheckmate && !game.inDraw) {
       if (game.turn === aiConfig.color) {
         console.log("[PlayTab effect] Scheduling AI move in 250ms");
@@ -127,15 +152,29 @@ function PlayTab({ gameId, accent }: { gameId: string; accent: string }) {
         return () => clearTimeout(timer);
       }
     }
-  }, [game.turn, game.fen, aiConfig.enabled, isAIThinking, game.inCheckmate, game.inDraw, aiConfig.color, makeAIMove]);
+  }, [
+    game.turn,
+    game.fen,
+    aiConfig.enabled,
+    isAIThinking,
+    game.inCheckmate,
+    game.inDraw,
+    aiConfig.color,
+    makeAIMove,
+  ]);
 
   // Track game result for score submission
   const gameOver = game.inCheckmate || game.inStalemate || game.inDraw;
-  const wonWithAI = gameOver && game.inCheckmate && aiConfig.enabled &&
-    game.turn === aiConfig.color && game.moves.length > 0;
+  const wonWithAI =
+    gameOver &&
+    game.inCheckmate &&
+    aiConfig.enabled &&
+    game.turn === aiConfig.color &&
+    game.moves.length > 0;
 
   const scoreMutation = useMutation({
     mutationFn: async () => {
+      if (scoreSubmitted) return;
       await submitScoreFn({
         data: {
           gameId,
@@ -145,8 +184,10 @@ function PlayTab({ gameId, accent }: { gameId: string; accent: string }) {
       });
     },
     onSuccess: () => {
+      setScoreSubmitted(true);
       toast.success("Score submitted!");
       queryClient.invalidateQueries({ queryKey: ["game-leaderboard", gameId] });
+      queryClient.invalidateQueries({ queryKey: ["global-leaderboard"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -156,6 +197,7 @@ function PlayTab({ gameId, accent }: { gameId: string; accent: string }) {
 
   const handleSetMode = (m: "local" | "ai") => {
     setMode(m);
+    setScoreSubmitted(false);
     if (m === "local") {
       setAIConfig({ enabled: false, color: "black", depth: 3 });
       setSelectedOpponent(null);
@@ -176,13 +218,14 @@ function PlayTab({ gameId, accent }: { gameId: string; accent: string }) {
       elo: selectedOpponent.elo,
       opponentId: selectedOpponent.id,
     });
+    setScoreSubmitted(false);
     resetGame();
   };
 
   const opponentLabel = selectedOpponent
     ? `${selectedOpponent.name} (${selectedOpponent.rating})`
     : aiConfig.opponentId
-      ? getOpponentById(aiConfig.opponentId)?.name ?? "AI"
+      ? (getOpponentById(aiConfig.opponentId)?.name ?? "AI")
       : "AI";
 
   // ── Mobile layout ───────────────────────────────────────────────
@@ -210,7 +253,15 @@ function PlayTab({ gameId, accent }: { gameId: string; accent: string }) {
                 <Bot className="w-4 h-4 mr-1" /> VS AI
               </Button>
               {mode === "local" && !isMobile && (
-                <Button size="sm" variant="ghost" className="ml-auto" onClick={resetGame}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="ml-auto"
+                  onClick={() => {
+                    setScoreSubmitted(false);
+                    resetGame();
+                  }}
+                >
                   <RotateCcw className="w-4 h-4 mr-1" /> New Game
                 </Button>
               )}
@@ -279,9 +330,7 @@ function PlayTab({ gameId, accent }: { gameId: string; accent: string }) {
                   className="w-full glow-primary"
                 >
                   <Play className="w-4 h-4 mr-1" fill="currentColor" />
-                  {selectedOpponent
-                    ? `Play vs ${selectedOpponent.name}`
-                    : "Choose an opponent"}
+                  {selectedOpponent ? `Play vs ${selectedOpponent.name}` : "Choose an opponent"}
                 </Button>
               </>
             )}
@@ -300,7 +349,11 @@ function PlayTab({ gameId, accent }: { gameId: string; accent: string }) {
           <span className="text-xs text-muted-foreground ml-auto">
             {isAIThinking ? "AI thinking..." : game.inCheckmate ? "Game Over" : "Your turn"}
           </span>
-          <Button size="sm" variant="ghost" onClick={() => setAIConfig({ ...aiConfig, enabled: false })}>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setAIConfig({ ...aiConfig, enabled: false })}
+          >
             Stop
           </Button>
         </div>
@@ -310,13 +363,26 @@ function PlayTab({ gameId, accent }: { gameId: string; accent: string }) {
       <div className={`grid ${isMobile ? "grid-cols-1" : "grid-cols-3"} gap-4`}>
         <div className={isMobile ? "" : "col-span-2"}>
           <div className="flex justify-between items-center mb-2 px-1">
-            <Button variant="ghost" size="sm" onClick={() => setOrientation(o => o === "white" ? "black" : "white")}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setOrientation((o) => (o === "white" ? "black" : "white"))}
+            >
               Flip board
             </Button>
             {game.inCheckmate && aiConfig.enabled && game.turn === aiConfig.color && (
-              <Button size="sm" onClick={() => scoreMutation.mutate()} disabled={scoreMutation.isPending} className="glow-primary">
+              <Button
+                size="sm"
+                onClick={() => scoreMutation.mutate()}
+                disabled={scoreMutation.isPending || scoreSubmitted}
+                className="glow-primary"
+              >
                 <Trophy className="w-4 h-4 mr-1" />
-                {scoreMutation.isPending ? "Submitting..." : "Submit Win"}
+                {scoreMutation.isPending
+                  ? "Submitting..."
+                  : scoreSubmitted
+                    ? "Win Submitted"
+                    : "Submit Win"}
               </Button>
             )}
           </div>
@@ -324,7 +390,10 @@ function PlayTab({ gameId, accent }: { gameId: string; accent: string }) {
             fen={game.fen}
             orientation={orientation}
             onMove={(from, to) => makeMove(from, to)}
-            disabled={aiConfig.enabled && (isAIThinking || (game.turn === aiConfig.color && !game.inCheckmate))}
+            disabled={
+              aiConfig.enabled &&
+              (isAIThinking || (game.turn === aiConfig.color && !game.inCheckmate))
+            }
             squareSize={isMobile ? Math.min(44, Math.floor((window.innerWidth - 48) / 8)) : 64}
             lastMove={game.lastMove}
           />
@@ -363,7 +432,10 @@ function PuzzlesTab() {
           <Button
             size="sm"
             variant={!difficulty ? "default" : "outline"}
-            onClick={() => { setDifficulty(undefined); p.loadPuzzle(); }}
+            onClick={() => {
+              setDifficulty(undefined);
+              p.loadPuzzle();
+            }}
           >
             All
           </Button>
@@ -372,7 +444,10 @@ function PuzzlesTab() {
               key={d}
               size="sm"
               variant={difficulty === d ? "default" : "outline"}
-              onClick={() => { setDifficulty(d); p.loadPuzzle(d); }}
+              onClick={() => {
+                setDifficulty(d);
+                p.loadPuzzle(d);
+              }}
               className="capitalize"
             >
               {d}
@@ -383,11 +458,7 @@ function PuzzlesTab() {
           <span className="text-muted-foreground">
             Solved: <span className="text-success font-bold">{p.totalSolved}</span>
           </span>
-          {p.streak > 1 && (
-            <span className="text-yellow-400 font-bold">
-              {p.streak} streak!
-            </span>
-          )}
+          {p.streak > 1 && <span className="text-yellow-400 font-bold">{p.streak} streak!</span>}
         </div>
       </div>
 
@@ -412,9 +483,11 @@ function PuzzlesTab() {
               orientation={p.playerSide === "black" ? "black" : "white"}
               onMove={(from, to) => p.onMove(from, to)}
               disabled={p.solved || p.showSolution}
-              squareSize={typeof window !== "undefined" && window.innerWidth < 768
-                ? Math.min(44, Math.floor((window.innerWidth - 48) / 8))
-                : 64}
+              squareSize={
+                typeof window !== "undefined" && window.innerWidth < 768
+                  ? Math.min(44, Math.floor((window.innerWidth - 48) / 8))
+                  : 64
+              }
             />
           </div>
 
@@ -424,7 +497,9 @@ function PuzzlesTab() {
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary">{p.puzzle.theme}</Badge>
-                  <Badge variant="outline" className="capitalize">{p.puzzle.difficulty}</Badge>
+                  <Badge variant="outline" className="capitalize">
+                    {p.puzzle.difficulty}
+                  </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">{p.puzzle.description}</p>
                 <p className="text-xs text-muted-foreground">
@@ -435,7 +510,9 @@ function PuzzlesTab() {
 
             {/* Message */}
             {p.message && (
-              <p className={`text-sm font-semibold px-1 ${p.message.includes("Incorrect") ? "text-destructive" : "text-success"}`}>
+              <p
+                className={`text-sm font-semibold px-1 ${p.message.includes("Incorrect") ? "text-destructive" : "text-success"}`}
+              >
                 {p.message}
               </p>
             )}
@@ -445,8 +522,10 @@ function PuzzlesTab() {
               <Card className="border-yellow-500/50 bg-yellow-500/5">
                 <CardContent className="p-3">
                   <p className="text-sm">
-                    <span className="text-yellow-400 font-semibold">Hint:</span>{" "}
-                    The next move is <span className="font-mono font-bold">{p.pv[p.idx]?.slice(0, 2)} → {p.pv[p.idx]?.slice(2, 4)}</span>
+                    <span className="text-yellow-400 font-semibold">Hint:</span> The next move is{" "}
+                    <span className="font-mono font-bold">
+                      {p.pv[p.idx]?.slice(0, 2)} → {p.pv[p.idx]?.slice(2, 4)}
+                    </span>
                   </p>
                 </CardContent>
               </Card>
@@ -458,7 +537,9 @@ function PuzzlesTab() {
                 <CardContent className="p-4 text-center">
                   <p className="text-success font-bold text-lg">Solved!</p>
                   <p className="text-xs text-muted-foreground">
-                    {p.mistakes > 0 ? `${p.mistakes} mistake${p.mistakes > 1 ? "s" : ""}` : "Perfect!"}
+                    {p.mistakes > 0
+                      ? `${p.mistakes} mistake${p.mistakes > 1 ? "s" : ""}`
+                      : "Perfect!"}
                     {p.hintsUsed > 0 && ` · ${p.hintsUsed} hint${p.hintsUsed > 1 ? "s" : ""}`}
                   </p>
                 </CardContent>
@@ -475,11 +556,7 @@ function PuzzlesTab() {
               >
                 <Lightbulb className="w-4 h-4 mr-1" /> Hint
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={p.toggleSolution}
-              >
+              <Button size="sm" variant="outline" onClick={p.toggleSolution}>
                 <Eye className="w-4 h-4 mr-1" />
                 {p.showSolution ? "Hide" : "Solution"}
               </Button>
@@ -494,7 +571,12 @@ function PuzzlesTab() {
             {/* Mistakes counter */}
             <p className="text-xs text-muted-foreground">
               Mistakes: <span className="font-semibold tabular-nums">{p.mistakes}</span>
-              {p.hintsUsed > 0 && <span> · Hints: <span className="font-semibold">{p.hintsUsed}</span></span>}
+              {p.hintsUsed > 0 && (
+                <span>
+                  {" "}
+                  · Hints: <span className="font-semibold">{p.hintsUsed}</span>
+                </span>
+              )}
             </p>
           </div>
         </div>
@@ -542,7 +624,13 @@ function LeaderboardPreview({ gameId }: { gameId: string }) {
               <span className="flex items-center gap-3">
                 <span
                   className={`w-5 text-xs tabular-nums ${
-                    i === 0 ? "text-yellow-400 font-bold" : i === 1 ? "text-gray-300 font-semibold" : i === 2 ? "text-amber-600 font-semibold" : "text-muted-foreground"
+                    i === 0
+                      ? "text-yellow-400 font-bold"
+                      : i === 1
+                        ? "text-gray-300 font-semibold"
+                        : i === 2
+                          ? "text-amber-600 font-semibold"
+                          : "text-muted-foreground"
                   }`}
                 >
                   {i + 1}

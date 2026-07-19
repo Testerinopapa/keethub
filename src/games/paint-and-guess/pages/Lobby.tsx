@@ -36,22 +36,22 @@ export default function Lobby({ onEnterRoom }: { onEnterRoom: () => void }) {
   useEffect(() => {
     if (profileFetchedRef.current) return;
     profileFetchedRef.current = true;
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        supabase
+    void (async () => {
+      try {
+        const { data: authData } = await supabase.auth.getUser();
+        if (!authData.user) return;
+        const { data: profile } = await supabase
           .from("profiles")
           .select("username")
-          .eq("id", data.user.id)
-          .single()
-          .then(({ data: profile }) => {
-            if (profile?.username) setPlayerName(profile.username);
-          })
-          .catch(() => {})
-          .finally(() => setProfileLoading(false));
-      } else {
+          .eq("id", authData.user.id)
+          .single();
+        if (profile?.username) setPlayerName(profile.username);
+      } catch {
+        // Profile fetch is best-effort; form is still usable.
+      } finally {
         setProfileLoading(false);
       }
-    }).catch(() => setProfileLoading(false));
+    })();
   }, []);
 
   const handleCreateRoom = async () => {

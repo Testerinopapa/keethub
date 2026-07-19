@@ -16,6 +16,7 @@ import type { AvatarConfig } from "@/lib/avatar/config";
 
 interface Player {
   id: string;
+  userId: string | null;  // auth.uid() — used for host comparison
   name: string;
   score: number;
   isReady: boolean;
@@ -39,8 +40,9 @@ interface GameState {
   roomId: string | null;
   gamePin: string | null;
   playerName: string;
-  ownerId: string | null;
-  selfId: string | null;
+  ownerId: string | null;   // auth.uid() of the room host
+  selfId: string | null;    // player row UUID from game_room_players
+  authUserId: string | null; // auth.uid() for host comparison
   players: Player[];
   phase: GamePhase;
   round: RoundState;
@@ -112,6 +114,7 @@ function createInitialGameState(): GameState {
     playerName: "",
     ownerId: null,
     selfId: null,
+    authUserId: null,
     players: [],
     phase: "lobby",
     round: createInitialRoundState(),
@@ -166,6 +169,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     let playerList = (data || []).map((p: any) => ({
       id: p.id,
+      userId: p.user_id ?? null,
       name: p.name,
       score: p.score,
       isReady: p.is_ready,
@@ -367,6 +371,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
           phase: "game-ended",
           players: result.scores.map((s: any) => ({
             id: s.id,
+            userId: s.userId ?? null,
             name: s.name,
             score: s.score,
             isReady: false,
@@ -472,6 +477,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         if (authUserId && p.userId === authUserId) selfId = p.id;
         return {
           id: p.id,
+          userId: p.userId ?? null,
           name: p.name,
           score: p.score,
           isReady: p.isReady ?? false,
@@ -499,6 +505,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         gamePin: state.room.gamePin ?? knownGamePin ?? prev.gamePin,
         playerName,
         selfId,
+        authUserId: authUserId ?? null,
         ownerId: state.room.ownerId,
         players,
         phase: state.room.isGameActive ? "drawing" : "lobby",

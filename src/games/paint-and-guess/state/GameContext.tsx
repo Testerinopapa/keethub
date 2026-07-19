@@ -364,7 +364,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     if (result.gameEnded) {
       channelRef.current.broadcast("game-ended", { players: result.scores });
-      // Update local scores
       if (Array.isArray(result.scores)) {
         setGameState((prev) => ({
           ...prev,
@@ -381,30 +380,72 @@ export function GameProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Round ended
+    // Round ended — update local state AND broadcast to peers
+    advanceCalledRef.current = false;
+    setChatMessages([]);
+    setGameState((prev) => ({
+      ...prev,
+      phase: "round-ended",
+      players: (result.players || prev.players).map((p: any) => ({
+        id: p.id,
+        userId: p.userId ?? null,
+        name: p.name,
+        score: p.score,
+        isReady: false,
+        avatar: p.avatar,
+      })),
+      round: {
+        ...prev.round,
+        number: result.roundNumber,
+        word: null,
+        revealedWord: result.previousWord ?? prev.round.revealedWord,
+      },
+    }));
+    window.dispatchEvent(new CustomEvent("round-ended"));
+
     channelRef.current.broadcast("round-ended", {
       word: result.previousWord || "",
-      roundNumber: result.roundNumber - 1,
+      roundNumber: result.roundNumber,
       players: result.players,
     });
 
-    // 3-second delay then start next round
     await new Promise((r) => setTimeout(r, 3000));
 
-    // Verify still in room (not left during delay)
     if (!channelRef.current || channelRef.current.id !== roomId) return;
+
+    // Start next round — update local state
+    advanceCalledRef.current = false;
+    const nextDeadline = result.deadlineAt
+      ? new Date(result.deadlineAt).getTime()
+      : Date.now() + result.roundTime * 1000;
+
+    setGameState((prev) => ({
+      ...prev,
+      phase: "drawing",
+      round: {
+        number: result.roundNumber,
+        drawer: result.drawer,
+        word: result.word,
+        revealedWord: null,
+        timeLeft: result.roundTime,
+        roundTime: result.roundTime,
+        winner: null,
+        deadlineAt: nextDeadline,
+      },
+    }));
+    fetchRoomPlayers(roomId);
+    window.dispatchEvent(new CustomEvent("round-started"));
 
     channelRef.current.broadcast("round-started", {
       drawer: result.drawer,
       roundTime: result.roundTime,
       roundNumber: result.roundNumber,
       word: result.word,
-      deadlineAt: result.deadlineAt
-        ? new Date(result.deadlineAt).getTime()
-        : Date.now() + result.roundTime * 1000,
+      deadlineAt: nextDeadline,
     });
 
     channelRef.current.broadcast("canvas-cleared", {});
+    window.dispatchEvent(new CustomEvent("canvas-cleared"));
   }, []);
 
   // ── Timer (client-side countdown from server deadline) ───────

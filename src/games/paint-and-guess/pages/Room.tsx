@@ -105,7 +105,7 @@ export default function Room({ onBack }: { onBack: () => void }) {
   };
 
   const currentPlayer = gameState.players.find((player) => player.id === gameState.selfId);
-  const isHost = gameState.ownerId === gameState.selfId;
+  const isHost = gameState.ownerId !== null && gameState.ownerId === gameState.authUserId;
   const isReady = currentPlayer?.isReady ?? false;
   const allPlayersReady =
     gameState.players.length >= 2 && gameState.players.every((player) => player.isReady);

@@ -28,7 +28,7 @@ export function PlayerList() {
       <CardContent className="pt-2">
         <div className="space-y-2">
           {sortedPlayers.map((player) => {
-            const isHost = gameState.ownerId === player.id;
+            const isHost = gameState.ownerId !== null && gameState.ownerId === player.userId;
             const isPlayerDrawer = currentDrawer?.id === player.id;
             const isMe = gameState.selfId === player.id;
             return (

@@ -247,7 +247,7 @@ BEGIN
   END IF;
 
   IF room_row.round_deadline_at > now()
-     AND NOT public.all_guessers_finished(room_id) THEN
+     AND NOT public.all_guessers_finished(p_room_id) THEN
     RETURN jsonb_build_object('success', false, 'error', 'Round still in progress');
   END IF;
 
@@ -260,13 +260,13 @@ BEGIN
     room_id, round_number, drawer_id, drawer_name, word,
     duration_ms, finished_by
   ) VALUES (
-    room_id,
+    p_room_id,
     room_row.round_number,
     room_row.current_drawer_id,
     (SELECT name FROM public.game_room_players WHERE id = room_row.current_drawer_id),
     COALESCE(prev_word, 'unknown'),
     EXTRACT(EPOCH FROM (now() - (room_row.round_deadline_at - (room_row.round_time * interval '1 second'))))::INT * 1000,
-    CASE WHEN public.all_guessers_finished(room_id) THEN 'all_guessed' ELSE 'timeout' END
+    CASE WHEN public.all_guessers_finished(p_room_id) THEN 'all_guessed' ELSE 'timeout' END
   );
 
   -- Check if game should end
@@ -316,7 +316,7 @@ BEGIN
   FROM public.game_room_players WHERE id = next_drawer_id;
 
   INSERT INTO public.game_round_secrets (room_id, round_number, word)
-  VALUES (room_id, room_row.round_number + 1, new_word);
+  VALUES (p_room_id, room_row.round_number + 1, new_word);
 
   UPDATE public.game_room_players SET has_guessed = false
   WHERE room_id = p_room_id;
@@ -352,6 +352,98 @@ BEGIN
       )
       FROM public.game_room_players p WHERE p.room_id = p_room_id
     )
+  );
+END;
+$$;
+
+-- ── submit_paint_guess: fix room_id ambiguity ─────────────────
+DROP FUNCTION IF EXISTS public.submit_paint_guess(UUID, TEXT);
+CREATE OR REPLACE FUNCTION public.submit_paint_guess(
+  p_room_id UUID,
+  p_guess TEXT
+)
+RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  room_row public.game_rooms%ROWTYPE;
+  player_row public.game_room_players%ROWTYPE;
+  secret_word TEXT;
+  player_has_guessed BOOLEAN;
+  is_correct BOOLEAN := false;
+  points INT := 0;
+  time_left_seconds INT;
+  player_score INT;
+BEGIN
+  SELECT * INTO room_row FROM public.game_rooms
+  WHERE id = p_room_id;
+
+  IF room_row IS NULL OR NOT room_row.is_game_active THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Game not active');
+  END IF;
+
+  SELECT * INTO player_row FROM public.game_room_players
+  WHERE room_id = p_room_id AND user_id = auth.uid();
+
+  IF player_row IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Not in this room');
+  END IF;
+
+  IF player_row.id = room_row.current_drawer_id THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Drawer cannot guess');
+  END IF;
+
+  SELECT has_guessed INTO player_has_guessed FROM public.game_room_players
+  WHERE id = player_row.id;
+
+  IF player_has_guessed THEN
+    RETURN jsonb_build_object('success', true, 'correct', false, 'already_guessed', true);
+  END IF;
+
+  SELECT round_secret.word INTO secret_word
+  FROM public.game_round_secrets round_secret
+  WHERE round_secret.room_id = p_room_id
+    AND round_secret.round_number = room_row.round_number;
+
+  IF lower(trim(p_guess)) = lower(trim(secret_word)) THEN
+    is_correct := true;
+
+    time_left_seconds := GREATEST(0, EXTRACT(EPOCH FROM (room_row.round_deadline_at - now()))::INT);
+    points := GREATEST(1, FLOOR(time_left_seconds / 10) + 10);
+
+    UPDATE public.game_room_players
+    SET score = score + points, has_guessed = true
+    WHERE id = player_row.id
+    RETURNING score INTO player_score;
+
+    UPDATE public.game_room_players
+    SET score = score + 5
+    WHERE id = room_row.current_drawer_id;
+  ELSE
+    UPDATE public.game_room_players SET has_guessed = false
+    WHERE id = player_row.id;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'correct', is_correct,
+    'points', points,
+    'newScore', COALESCE(player_score, player_row.score)
+  );
+END;
+$$;
+
+-- ── all_guessers_finished: fix room_id ambiguity ───────────────
+DROP FUNCTION IF EXISTS public.all_guessers_finished(UUID);
+CREATE OR REPLACE FUNCTION public.all_guessers_finished(p_room_id UUID)
+RETURNS BOOLEAN LANGUAGE plpgsql STABLE AS $$
+BEGIN
+  RETURN NOT EXISTS (
+    SELECT 1 FROM public.game_room_players
+    WHERE room_id = p_room_id
+      AND has_guessed = false
+      AND id != (
+        SELECT current_drawer_id FROM public.game_rooms
+        WHERE id = p_room_id
+      )
   );
 END;
 $$;

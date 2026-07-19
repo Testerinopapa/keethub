@@ -59,7 +59,8 @@ END;
 $$;
 
 -- ── start_paint_game: guard against null auth ─────────────────
-CREATE OR REPLACE FUNCTION public.start_paint_game(room_id UUID)
+DROP FUNCTION IF EXISTS public.start_paint_game(UUID);
+CREATE OR REPLACE FUNCTION public.start_paint_game(p_room_id UUID)
 RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   current_user_id UUID := auth.uid();
@@ -74,7 +75,7 @@ BEGIN
   END IF;
 
   SELECT * INTO room_row FROM public.game_rooms
-  WHERE id = room_id FOR UPDATE;
+  WHERE id = p_room_id FOR UPDATE;
 
   IF room_row IS NULL THEN
     RETURN jsonb_build_object('success', false, 'error', 'Room not found');
@@ -105,7 +106,7 @@ BEGIN
   ORDER BY random() LIMIT 1;
 
   INSERT INTO public.game_round_secrets (room_id, round_number, word)
-  VALUES (room_id, 1, new_word);
+  VALUES (p_room_id, 1, new_word);
 
   UPDATE public.game_rooms
   SET is_game_active = true,
@@ -114,7 +115,7 @@ BEGIN
       round_deadline_at = now() + (room_row.round_time * interval '1 second'),
       word_history = ARRAY[new_word],
       last_activity_at = now()
-  WHERE id = room_id;
+  WHERE id = p_room_id;
 
   RETURN jsonb_build_object(
     'success', true,
@@ -185,7 +186,8 @@ END;
 $$;
 
 -- ── leave_paint_room: guard against null auth ─────────────────
-CREATE OR REPLACE FUNCTION public.leave_paint_room(room_id UUID)
+DROP FUNCTION IF EXISTS public.leave_paint_room(UUID);
+CREATE OR REPLACE FUNCTION public.leave_paint_room(p_room_id UUID)
 RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   current_user_id UUID := auth.uid();
@@ -197,27 +199,27 @@ BEGIN
   END IF;
 
   SELECT (owner_id = current_user_id) INTO was_owner
-  FROM public.game_rooms WHERE id = room_id;
+  FROM public.game_rooms WHERE id = p_room_id;
 
   DELETE FROM public.game_room_players
-  WHERE room_id = room_id AND user_id = current_user_id;
+  WHERE room_id = p_room_id AND user_id = current_user_id;
 
   IF was_owner THEN
     SELECT user_id INTO next_owner_id
     FROM public.game_room_players
-    WHERE room_id = room_id AND is_connected = true
+    WHERE room_id = p_room_id AND is_connected = true
     ORDER BY created_at ASC LIMIT 1;
 
     UPDATE public.game_rooms
     SET owner_id = COALESCE(next_owner_id, owner_id)
-    WHERE id = room_id;
+    WHERE id = p_room_id;
   END IF;
 
   IF NOT EXISTS (
-    SELECT 1 FROM public.game_room_players WHERE room_id = room_id
+    SELECT 1 FROM public.game_room_players WHERE room_id = p_room_id
   ) THEN
     UPDATE public.game_rooms SET is_game_active = false
-    WHERE id = room_id;
+    WHERE id = p_room_id;
   END IF;
 
   RETURN jsonb_build_object('success', true);
@@ -225,7 +227,8 @@ END;
 $$;
 
 -- ── advance_paint_round: use local variable for auth.uid() ────
-CREATE OR REPLACE FUNCTION public.advance_paint_round(room_id UUID)
+DROP FUNCTION IF EXISTS public.advance_paint_round(UUID);
+CREATE OR REPLACE FUNCTION public.advance_paint_round(p_room_id UUID)
 RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   room_row public.game_rooms%ROWTYPE;
@@ -237,7 +240,7 @@ DECLARE
   player_score_json JSONB;
 BEGIN
   SELECT * INTO room_row FROM public.game_rooms
-  WHERE id = room_id FOR UPDATE;
+  WHERE id = p_room_id FOR UPDATE;
 
   IF room_row IS NULL OR NOT room_row.is_game_active THEN
     RETURN jsonb_build_object('success', false, 'error', 'Game not active');
@@ -251,7 +254,7 @@ BEGIN
   -- Record previous round secret
   SELECT word INTO prev_word
   FROM public.game_round_secrets
-  WHERE room_id = room_id AND round_number = room_row.round_number;
+  WHERE room_id = p_room_id AND round_number = room_row.round_number;
 
   INSERT INTO public.game_rounds (
     room_id, round_number, drawer_id, drawer_name, word,
@@ -270,7 +273,7 @@ BEGIN
   IF room_row.round_number >= room_row.max_rounds THEN
     UPDATE public.game_rooms
     SET is_game_active = false, last_activity_at = now()
-    WHERE id = room_id;
+    WHERE id = p_room_id;
 
     SELECT jsonb_agg(
       jsonb_build_object(
@@ -281,7 +284,7 @@ BEGIN
       ) ORDER BY p.score DESC
     ) INTO player_score_json
     FROM public.game_room_players p
-    WHERE p.room_id = room_id;
+    WHERE p.room_id = p_room_id;
 
     RETURN jsonb_build_object(
       'success', true,
@@ -297,11 +300,11 @@ BEGIN
   new_word := public.get_random_word(COALESCE(room_row.word_pack, 'classic'));
 
   SELECT COUNT(*) INTO active_players
-  FROM public.game_room_players WHERE room_id = room_id;
+  FROM public.game_room_players WHERE room_id = p_room_id;
 
   SELECT id INTO next_drawer_id
   FROM public.game_room_players
-  WHERE room_id = room_id AND id != room_row.current_drawer_id
+  WHERE room_id = p_room_id AND id != room_row.current_drawer_id
   ORDER BY created_at ASC, random()
   LIMIT 1;
 
@@ -316,7 +319,7 @@ BEGIN
   VALUES (room_id, room_row.round_number + 1, new_word);
 
   UPDATE public.game_room_players SET has_guessed = false
-  WHERE room_id = room_id;
+  WHERE room_id = p_room_id;
 
   UPDATE public.game_rooms
   SET round_number = round_number + 1,
@@ -324,7 +327,7 @@ BEGIN
       round_deadline_at = now() + (room_row.round_time * interval '1 second'),
       word_history = array_append(word_history, new_word),
       last_activity_at = now()
-  WHERE id = room_id;
+  WHERE id = p_room_id;
 
   RETURN jsonb_build_object(
     'success', true,
@@ -347,7 +350,7 @@ BEGIN
           'score', p.score
         )
       )
-      FROM public.game_room_players p WHERE p.room_id = room_id
+      FROM public.game_room_players p WHERE p.room_id = p_room_id
     )
   );
 END;

@@ -354,7 +354,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     if (advanceCalledRef.current) return;
     advanceCalledRef.current = true;
 
-    const { data } = await supabase.rpc("advance_paint_round", { room_id: roomId });
+    const { data } = await supabase.rpc("advance_paint_round", { p_room_id: roomId });
     const result = data as any;
 
     if (!result?.success || !channelRef.current) {
@@ -562,7 +562,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       // Best-effort server cleanup
       void (async () => {
         try {
-          await supabase.rpc("leave_paint_room", { room_id: roomId });
+          await supabase.rpc("leave_paint_room", { p_room_id: roomId });
         } catch {
           // Ignore best-effort cleanup failures during local leave.
         }
@@ -582,7 +582,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     if (!gameState.roomId || !channelRef.current) return;
 
     const { data, error } = await supabase.rpc("start_paint_game", {
-      room_id: gameState.roomId,
+      p_room_id: gameState.roomId,
     });
 
     if (error || !(data as any)?.success) {

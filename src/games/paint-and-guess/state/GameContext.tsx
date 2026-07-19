@@ -145,7 +145,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const { joinRoomChannel, leaveRoomChannel } = useRealtime();
   const [gameState, setGameState] = useState<GameState>(createInitialGameState());
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [isConnected] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
   const channelRef = useRef<RoomChannel | null>(null);
   const timerRef = useRef<number | null>(null);
   const advanceCalledRef = useRef(false);
@@ -203,6 +203,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       }
       const roomChannel = joinRoomChannel(roomId);
       channelRef.current = roomChannel;
+
+      roomChannel.onStatusChange((connected) => setIsConnected(connected));
 
       roomChannel.subscribe("player-joined", () => {
         fetchRoomPlayers(roomId);
@@ -624,6 +626,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       timerRef.current = null;
     }
     advanceCalledRef.current = false;
+    setIsConnected(false);
     setGameState(createInitialGameState());
     setChatMessages([]);
   }, [gameState.roomId, gameState.playerName, gameState.selfId, leaveRoomChannel]);

@@ -1,5 +1,17 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { PlayerList } from "./PlayerList";
 import { Chat } from "./Chat";
 import { LogOut, Play, Users } from "lucide-react";
@@ -29,6 +41,18 @@ export function LobbyStage({
   onStartGame,
   onLeaveRoom,
 }: LobbyStageProps) {
+  // Keyboard shortcut: Space/Enter toggles ready state when no input is focused
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.target instanceof HTMLButtonElement && e.target.type === "submit") return;
+      onReadyToggle();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onReadyToggle]);
+
   return (
     <div className="container mx-auto p-2 sm:p-4 lg:p-6 h-[calc(100vh-5rem)] max-h-screen overflow-y-auto">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 auto-rows-fr">
@@ -87,14 +111,26 @@ export function LobbyStage({
             </CardContent>
           </Card>
 
-          <Button
-            onClick={onLeaveRoom}
-            variant="outline"
-            className="w-full flex-shrink-0 text-sm sm:text-base"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Leave Room
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" className="w-full flex-shrink-0 text-sm sm:text-base">
+                <LogOut className="w-4 h-4 mr-2" />
+                Leave Room
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Leave this room?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  You'll need to rejoin with the PIN to come back.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Stay</AlertDialogCancel>
+                <AlertDialogAction onClick={onLeaveRoom}>Leave</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
         {/* Main Area - Game Info */}

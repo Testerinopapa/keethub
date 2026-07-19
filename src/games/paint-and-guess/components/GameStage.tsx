@@ -2,6 +2,17 @@ import { Canvas } from "./Canvas";
 import { Chat } from "./Chat";
 import { PlayerList } from "./PlayerList";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { LogOut, Sparkles } from "lucide-react";
 
 interface GameStageProps {
@@ -17,14 +28,29 @@ export function GameStage({ onLeaveRoom }: GameStageProps) {
             <PlayerList />
           </div>
 
-          <Button
-            onClick={onLeaveRoom}
-            variant="outline"
-            className="h-12 w-full flex-shrink-0 rounded-lg border-[#D7DDEA] bg-white text-base font-extrabold text-[#7037E8] shadow-sm hover:bg-[#F6F1FF] hover:text-[#7037E8]"
-          >
-            <LogOut className="mr-2 h-5 w-5" />
-            Leave
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-12 w-full flex-shrink-0 rounded-lg border-[#D7DDEA] bg-white text-base font-extrabold text-[#7037E8] shadow-sm hover:bg-[#F6F1FF] hover:text-[#7037E8]"
+              >
+                <LogOut className="mr-2 h-5 w-5" />
+                Leave
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Leave the game?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  You won't earn any more points this round. Are you sure?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Stay</AlertDialogCancel>
+                <AlertDialogAction onClick={onLeaveRoom}>Leave</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           <div className="relative hidden flex-shrink-0 rounded-lg border border-[#8BE0DE] bg-white px-5 pb-5 pt-8 text-center shadow-[0_12px_30px_rgba(16,32,74,0.06)] xl:block">
             <div className="absolute -top-5 left-1/2 flex h-12 w-12 -translate-x-1/2 items-center justify-center rounded-full bg-[#FFF1F6] text-[#FF2F85] shadow-sm">

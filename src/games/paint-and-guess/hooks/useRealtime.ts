@@ -7,6 +7,7 @@ export interface RoomChannel {
   subscribe: (event: string, handler: (payload: any) => void) => () => void;
   broadcast: (event: string, payload: any) => void;
   unsubscribe: () => void;
+  onStatusChange: (cb: (connected: boolean) => void) => () => void;
 }
 
 const channelCache = new Map<
@@ -85,6 +86,17 @@ export function useRealtime(): {
 
         unsubscribe() {
           unsubscribeChannel(roomId);
+        },
+
+        onStatusChange(cb) {
+          const onSub = (status: string) => cb(status === "SUBSCRIBED");
+          eventsChannel.on("system", { event: "connected" }, () => onSub("SUBSCRIBED"));
+          eventsChannel.on("system", { event: "disconnected" }, () => onSub("CLOSED"));
+          drawingChannel.on("system", { event: "connected" }, () => onSub("SUBSCRIBED"));
+          drawingChannel.on("system", { event: "disconnected" }, () => onSub("CLOSED"));
+          return () => {
+            // cleanup handled by unsubscribe
+          };
         },
       };
 

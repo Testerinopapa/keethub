@@ -1,7 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { ArrowLeft, Trophy, Play } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, Construction, Trophy } from "lucide-react";
 import { getGameBySlug } from "@/lib/games.functions";
 import { getGameLeaderboard } from "@/lib/scores.functions";
 import { Button } from "@/components/ui/button";
@@ -44,8 +43,6 @@ function GameDetail() {
   const { slug } = Route.useParams();
   const { data: game } = useSuspenseQuery(gameQuery(slug));
   const { data: leaderboard } = useSuspenseQuery(leaderboardQuery(game?.id));
-  const [playing, setPlaying] = useState(false);
-  const [score, setScore] = useState(0);
 
   if (!game) return null;
   const accent = game.accent_color ?? "#a78bfa";
@@ -71,39 +68,25 @@ function GameDetail() {
         </Badge>
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">{game.title}</h1>
         <p className="mt-3 text-muted-foreground max-w-2xl">{game.description}</p>
-        <Button
-          size="lg"
-          className="mt-6 glow-primary"
-          onClick={() => {
-            setPlaying(true);
-            setScore(0);
-          }}
-        >
-          <Play className="w-4 h-4 mr-1" fill="currentColor" />
-          Launch game
-        </Button>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
-          <div className="rounded-2xl border border-border bg-card aspect-video grid place-items-center relative overflow-hidden">
-            {!playing ? (
-              <div className="text-center p-8">
-                <div className="text-6xl mb-3">🎮</div>
-                <p className="text-muted-foreground">
-                  Press <span className="text-foreground">Launch game</span> to start playing.
-                </p>
-              </div>
-            ) : (
-              <PlaceholderGameSurface
-                accent={accent}
-                score={score}
-                onScoreChange={setScore}
-                onFinish={() => {
-                  setPlaying(false);
-                }}
-              />
-            )}
+          <div className="rounded-2xl border border-border bg-card aspect-video grid place-items-center">
+            <div className="text-center p-8 max-w-md">
+              <Construction className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h2 className="text-xl font-bold mb-2">Not quite ready yet</h2>
+              <p className="text-muted-foreground mb-4">
+                This game doesn't have a live build yet. Check back soon or try one of the ready games
+                from the library.
+              </p>
+              <Link to="/hub">
+                <Button variant="default">
+                  <ArrowLeft className="w-4 h-4 mr-1" />
+                  Back to library
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -128,43 +111,6 @@ function GameDetail() {
             </ol>
           )}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function PlaceholderGameSurface({
-  accent,
-  score,
-  onScoreChange,
-  onFinish,
-}: {
-  accent: string;
-  score: number;
-  onScoreChange: (n: number) => void;
-  onFinish: () => void;
-}) {
-  return (
-    <div className="w-full h-full flex flex-col">
-      <div className="flex-1 flex items-center justify-center p-8 relative">
-        <button
-          className="w-24 h-24 rounded-full transition-transform hover:scale-110 active:scale-95"
-          style={{
-            background: `radial-gradient(circle at 30% 30%, ${accent}, ${accent}80)`,
-            boxShadow: `0 0 40px ${accent}80`,
-          }}
-          onClick={() => onScoreChange(score + 10)}
-        >
-          <span className="text-2xl font-bold text-white">TAP</span>
-        </button>
-      </div>
-      <div className="border-t border-border p-3 flex items-center justify-between bg-background/40">
-        <span className="text-sm">
-          Score: <span className="font-bold tabular-nums text-primary">{score}</span>
-        </span>
-        <Button size="sm" variant="outline" onClick={onFinish}>
-          Submit score
-        </Button>
       </div>
     </div>
   );

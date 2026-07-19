@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { UserIcon } from "lucide-react";
+import { Copy, UserIcon } from "lucide-react";
 import { getMyProfile, updateMyProfile } from "@/lib/profile.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,7 +113,20 @@ function ProfilePage() {
             <AvatarPreview config={avatarConfig} size={80} />
           </button>
           <div>
-            <p className="font-semibold text-lg">{profile?.username}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-semibold text-lg">{profile?.username}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  void navigator.clipboard.writeText(profile?.username ?? "");
+                  toast.success("Username copied");
+                }}
+                className="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                aria-label="Copy username"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+            </div>
             <p className="text-sm text-muted-foreground">
               Joined{" "}
               {profile?.created_at

@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useGame } from "@/games/paint-and-guess";
 import { toast } from "sonner";
-import { Users, Plus, LogIn } from "lucide-react";
+import { Loader2, Users, Plus, LogIn } from "lucide-react";
 import { AvatarConfig, createDefaultAvatarConfig } from "@/lib/avatar/config";
 import { safeLoadAvatarConfig } from "@/lib/avatar/validation";
 import { supabase } from "@/integrations/supabase/client";
@@ -155,6 +155,7 @@ export default function Lobby({ onEnterRoom }: { onEnterRoom: () => void }) {
                     />
                   </div>
                   <Button onClick={handleCreateRoom} disabled={isCreating} className="w-full">
+                    {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {isCreating ? "Creating..." : "Create Room"}
                   </Button>
                 </CardContent>
@@ -183,6 +184,7 @@ export default function Lobby({ onEnterRoom }: { onEnterRoom: () => void }) {
                     variant="outline"
                     className="w-full"
                   >
+                    {isJoining && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {isJoining ? "Joining..." : "Join Room"}
                   </Button>
                 </CardContent>

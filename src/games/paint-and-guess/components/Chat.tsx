@@ -22,12 +22,20 @@ export function Chat() {
   const { gameState, isGameActive, isDrawer, sendGuess, sendChatMessage, chatMessages } = useGame();
   const [message, setMessage] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [chatMessages]);
+
+  // Auto-focus chat input when drawing starts and user is guessing
+  useEffect(() => {
+    if (isGameActive && !isDrawer && gameState.phase === "drawing") {
+      requestAnimationFrame(() => inputRef.current?.focus());
+    }
+  }, [isGameActive, isDrawer, gameState.phase]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,23 +128,29 @@ export function Chat() {
         })}
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-4 flex flex-shrink-0 items-center gap-2">
-        <Input
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder={isGameActive && !isDrawer ? "Type your guess..." : "Type a message..."}
-          disabled={isInputDisabled}
-          className="h-12 rounded-lg border-[#DDE4EF] bg-white px-4 text-[#10204A] placeholder:text-[#98A2B3] focus-visible:ring-[#10B8B5]"
-        />
-        <Button
-          type="submit"
-          size="icon"
-          disabled={gameState.phase === "round-ended"}
-          className="h-12 w-12 flex-shrink-0 rounded-full bg-[#FF2F85] text-white shadow-[0_12px_24px_rgba(255,47,133,0.28)] hover:bg-[#E92778]"
-          aria-label="Send message"
-        >
-          <Send className="h-5 w-5" />
-        </Button>
+      <form onSubmit={handleSubmit} className="mt-4 flex flex-shrink-0 flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <Input
+            ref={inputRef}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder={isGameActive && !isDrawer ? "Type your guess..." : "Type a message..."}
+            disabled={isInputDisabled}
+            className="h-12 rounded-lg border-[#DDE4EF] bg-white px-4 text-[#10204A] placeholder:text-[#98A2B3] focus-visible:ring-[#10B8B5]"
+          />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={gameState.phase === "round-ended"}
+            className="h-12 w-12 flex-shrink-0 rounded-full bg-[#FF2F85] text-white shadow-[0_12px_24px_rgba(255,47,133,0.28)] hover:bg-[#E92778]"
+            aria-label="Send message"
+          >
+            <Send className="h-5 w-5" />
+          </Button>
+        </div>
+        <p className="px-1 text-xs font-medium text-[#98A2B3]">
+          Press Enter to send
+        </p>
       </form>
 
       <div className="mt-4 flex flex-shrink-0 items-center gap-2 text-xs font-bold text-[#667085]">

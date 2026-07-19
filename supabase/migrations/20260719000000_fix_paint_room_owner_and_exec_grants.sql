@@ -247,7 +247,7 @@ BEGIN
   END IF;
 
   IF room_row.round_deadline_at > now()
-     AND NOT public.all_guessers_finished(room_id) THEN
+     AND NOT public.all_guessers_finished(p_room_id) THEN
     RETURN jsonb_build_object('success', false, 'error', 'Round still in progress');
   END IF;
 
@@ -260,13 +260,13 @@ BEGIN
     room_id, round_number, drawer_id, drawer_name, word,
     duration_ms, finished_by
   ) VALUES (
-    room_id,
+    p_room_id,
     room_row.round_number,
     room_row.current_drawer_id,
     (SELECT name FROM public.game_room_players WHERE id = room_row.current_drawer_id),
     COALESCE(prev_word, 'unknown'),
     EXTRACT(EPOCH FROM (now() - (room_row.round_deadline_at - (room_row.round_time * interval '1 second'))))::INT * 1000,
-    CASE WHEN public.all_guessers_finished(room_id) THEN 'all_guessed' ELSE 'timeout' END
+    CASE WHEN public.all_guessers_finished(p_room_id) THEN 'all_guessed' ELSE 'timeout' END
   );
 
   -- Check if game should end
@@ -316,7 +316,7 @@ BEGIN
   FROM public.game_room_players WHERE id = next_drawer_id;
 
   INSERT INTO public.game_round_secrets (room_id, round_number, word)
-  VALUES (room_id, room_row.round_number + 1, new_word);
+  VALUES (p_room_id, room_row.round_number + 1, new_word);
 
   UPDATE public.game_room_players SET has_guessed = false
   WHERE room_id = p_room_id;

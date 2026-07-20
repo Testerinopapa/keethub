@@ -97,7 +97,7 @@ export const LOCAL_GAMES: LocalGame[] = [
       slug: "trivia-blitz",
       title: "Trivia Blitz",
       description:
-        "Fast-paced quiz game — pick a category, answer quickly, and climb the leaderboard. Speed and accuracy win!",
+        "Fast-paced multiplayer quiz game — compete against friends in real-time trivia. Speed and accuracy win!",
       category: "trivia",
       thumbnail_url: null,
       accent_color: "#a78bfa",

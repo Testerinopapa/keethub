@@ -5,39 +5,46 @@ import { TileNode } from "./TileNode";
 export function UnitSection({ unit }: { unit: Unit }) {
   const completedTiles = useAcademyStore((s) => s.completedTiles);
   const totalTiles = unit.tiles.length;
-  const done = unit.tiles.filter((t) => completedTiles.includes(t.id)).length;
+  const done = unit.tiles.filter((tile) => completedTiles.includes(tile.id)).length;
 
   return (
-    <section className="mb-10">
-      <header
-        className="rounded-2xl px-6 py-5 text-white"
-        style={{ backgroundColor: unit.color }}
-      >
-        <div className="flex items-center justify-between">
+    <section>
+      <header className="relative overflow-hidden rounded-[27px] bg-gradient-to-br from-[#82D900] via-[#55C900] to-[#45BB00] px-7 py-8 text-white shadow-[0_10px_18px_rgba(68,159,4,0.23)] sm:px-10 sm:py-9">
+        <div
+          aria-hidden
+          className="absolute -bottom-10 -left-3 h-24 w-32 rounded-[100%] bg-[#A9EB43]/30"
+        />
+        <div
+          aria-hidden
+          className="absolute -right-8 -top-12 h-44 w-44 rounded-full bg-[#B3ED4B]/20"
+        />
+        <div className="relative flex items-center justify-between gap-5">
           <div>
-            <p className="text-xs font-black uppercase tracking-wide text-white/70">
+            <p className="inline-flex rounded-full bg-white/20 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/90">
               Unit {unit.order}
             </p>
-            <h2 className="text-2xl font-black">{unit.title}</h2>
-            <p className="mt-1 text-sm font-semibold text-white/80">
-              {unit.description}
-            </p>
+            <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-[42px]">{unit.title}</h2>
+            <p className="mt-2 text-base font-bold text-white/95 sm:text-lg">{unit.description}</p>
           </div>
-          <div className="text-right">
-            <p className="text-sm font-bold text-white/70">
+          <div className="min-w-[125px] self-center text-center">
+            <p className="text-xl font-black">
               {done} / {totalTiles}
             </p>
-            <div className="mt-2 h-2 w-24 overflow-hidden rounded-full bg-white/25">
+            <div className="mt-3 h-3 overflow-hidden rounded-full bg-white/35">
               <div
                 className="h-full rounded-full bg-white transition-all duration-500"
-                style={{ width: `${totalTiles > 0 ? (done / totalTiles) * 100 : 0}%` }}
+                style={{ width: `${totalTiles ? (done / totalTiles) * 100 : 0}%` }}
               />
             </div>
           </div>
         </div>
       </header>
 
-      <div className="mt-6 flex flex-wrap justify-center gap-4">
+      <div className="relative mx-auto mt-7 flex max-w-[950px] flex-col items-center justify-between gap-5 md:flex-row md:gap-9">
+        <div
+          aria-hidden
+          className="absolute left-[17%] right-[17%] top-1/2 hidden border-t-2 border-dashed border-[#D4DBE7] md:block"
+        />
         {unit.tiles.map((tile) => (
           <TileNode key={tile.id} tile={tile} />
         ))}

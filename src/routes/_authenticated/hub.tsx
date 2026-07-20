@@ -1,7 +1,12 @@
 import type { CSSProperties } from "react";
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import { Search } from "lucide-react";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { Input } from "@/components/ui/input";
+import { AvatarPreview } from "@/components/avatar/AvatarPreview";
+import { useHubStore } from "@/stores/hub-store";
+import { useProfileStore } from "@/stores/profile-store";
 
 export const Route = createFileRoute("/_authenticated/hub")({
   component: HubLayout,
@@ -43,26 +48,66 @@ const primkeetHubTheme = {
 } as CSSProperties;
 
 function HubLayout() {
+  const search = useHubStore((state) => state.search);
+  const setSearch = useHubStore((state) => state.setSearch);
+  const { avatarConfig } = useProfileStore();
   return (
     <SidebarProvider className="min-h-screen bg-[#FBFDFF] text-[#10204A]" style={primkeetHubTheme}>
       <div className="flex min-h-screen w-full bg-[#FBFDFF] text-[#10204A]">
-        <AppSidebar />
+        <div className="md:hidden">
+          <AppSidebar />
+        </div>
         <SidebarInset className="flex flex-1 flex-col bg-[#FBFDFF]">
-          <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b border-[#E8ECF4] bg-white/92 px-4 shadow-[0_8px_24px_rgba(16,32,74,0.04)] backdrop-blur md:px-6">
-            <SidebarTrigger className="h-10 w-10 rounded-full border border-[#E8ECF4] bg-white text-[#10204A] shadow-sm hover:bg-[#ECFBFA] hover:text-[#08AAA7]" />
+          <header className="sticky top-0 z-10 flex h-[88px] items-center gap-4 border-b border-[#E8ECF4] bg-white/92 px-5 backdrop-blur md:px-12">
+            <SidebarTrigger className="h-10 w-10 rounded-full border border-[#E8ECF4] bg-white text-[#10204A] shadow-sm hover:bg-[#ECFBFA] hover:text-[#08AAA7] md:hidden" />
             <Link
               to="/hub"
-              className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#08AAA7] focus-visible:ring-offset-2 md:hidden"
+              className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#08AAA7] focus-visible:ring-offset-2"
             >
               <img
                 src="/primkeet-logo.png"
                 alt="PrimKeet"
                 width={176}
                 height={60}
-                className="h-9 w-auto object-contain"
+                className="h-10 w-auto object-contain"
               />
             </Link>
-            <div className="flex-1" />
+            <nav className="hidden items-center gap-2 md:flex" aria-label="Primary navigation">
+              <Link
+                to="/hub"
+                className="rounded-full bg-[#FFF0F6] px-5 py-2.5 text-sm font-extrabold text-[#FF3B8D]"
+              >
+                Library
+              </Link>
+              <Link
+                to="/hub/leaderboard"
+                className="rounded-full px-4 py-2.5 text-sm font-extrabold text-[#52617E] transition hover:bg-[#F6F8FC]"
+              >
+                Leaderboard
+              </Link>
+              <Link
+                to="/hub/profile"
+                className="rounded-full px-4 py-2.5 text-sm font-extrabold text-[#52617E] transition hover:bg-[#F6F8FC]"
+              >
+                Profile
+              </Link>
+            </nav>
+            <div className="relative ml-auto hidden w-full max-w-[300px] sm:block">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#8190AA]" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search games"
+                className="h-12 rounded-full border-[#D7DEEA] bg-white pl-12 font-semibold text-[#10204A] shadow-none focus-visible:ring-[#08AAA7]"
+              />
+            </div>
+            <Link
+              to="/hub/profile"
+              aria-label="Profile"
+              className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-[#E8F8F6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#08AAA7] focus-visible:ring-offset-2"
+            >
+              <AvatarPreview config={avatarConfig} size={40} />
+            </Link>
           </header>
           <main className="flex-1">
             <Outlet />

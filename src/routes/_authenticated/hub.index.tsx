@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import {
-  ArrowDownUp,
   ArrowRight,
   BookOpen,
   Brain,
@@ -16,7 +15,6 @@ import {
 } from "lucide-react";
 import { Suspense, useMemo, useState } from "react";
 
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { listGames, type Game } from "@/lib/games.functions";
 import { LOCAL_GAMES, PORTED_ROUTES } from "@/lib/local-games";
@@ -199,17 +197,10 @@ function LearningWorldsPage() {
   const navigate = useNavigate();
   const games = useMemo(() => mergeGames(serverGames), [serverGames]);
   const search = useHubStore((state) => state.search);
-  const setSearch = useHubStore((state) => state.setSearch);
   const activeCategory = useHubStore((state) => state.activeCategory);
-  const setCategory = useHubStore((state) => state.setCategory);
   const sortMode = useHubStore((state) => state.sortMode);
-  const setSortMode = useHubStore((state) => state.setSortMode);
   const recentlyPlayed = useHubStore((state) => state.recentlyPlayed);
   const trackGameVisit = useHubStore((state) => state.trackGameVisit);
-  const categories = useMemo(
-    () => Array.from(new Set(games.map((game) => game.category))).sort(),
-    [games],
-  );
   const recentGames = useMemo(
     () =>
       recentlyPlayed
@@ -232,23 +223,13 @@ function LearningWorldsPage() {
     if (route) navigate({ to: route as never });
     else navigate({ to: "/hub/games/$slug", params: { slug: game.slug } as never });
   };
-  const resetFilters = () => {
-    setSearch("");
-    setCategory(null);
-    setSortMode("default");
-  };
 
   return (
     <div className="min-h-[calc(100vh-4rem)] overflow-hidden bg-[#FFFCF7] text-[#10204A]">
-      <div className="relative mx-auto w-full max-w-[1500px] px-4 py-8 sm:px-6 lg:px-10 lg:py-12">
-        <div className="pointer-events-none absolute -left-28 top-20 h-72 w-72 rounded-full bg-[#E8F8F6] opacity-80" />
-        <div className="pointer-events-none absolute -right-24 top-0 h-80 w-80 rounded-full bg-[#FFF0F6] opacity-70" />
-        <section className="relative max-w-4xl">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-extrabold text-[#087E7D] shadow-[0_10px_28px_rgba(16,32,74,0.08)]">
-            <Sparkles className="h-4 w-4 text-[#FF9418]" />
-            Learn through play
-          </span>
-          <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <div className="relative mx-auto w-full max-w-[1600px] px-5 py-9 sm:px-8 lg:px-16 lg:py-10">
+        <div className="pointer-events-none absolute left-[25%] top-[280px] hidden h-1.5 w-1.5 rounded-full bg-[#B9C2D3] shadow-[34px_12px_0_#B9C2D3,68px_28px_0_#B9C2D3,102px_44px_0_#B9C2D3,136px_25px_0_#B9C2D3,170px_44px_0_#B9C2D3,204px_30px_0_#B9C2D3,238px_58px_0_#B9C2D3,272px_76px_0_#B9C2D3,306px_48px_0_#B9C2D3,340px_82px_0_#B9C2D3,374px_62px_0_#B9C2D3,408px_90px_0_#B9C2D3,442px_72px_0_#B9C2D3,476px_102px_0_#B9C2D3,510px_80px_0_#B9C2D3,544px_110px_0_#B9C2D3] lg:block" />
+        <section className="relative">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <h1 className="text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl">
                 Where do you want to learn today?
@@ -257,66 +238,26 @@ function LearningWorldsPage() {
                 Every world groups games by the skill they build.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={surpriseMe}
-              disabled={!games.length}
-              className="inline-flex h-13 shrink-0 items-center justify-center gap-2 rounded-full bg-[#FF3B8D] px-6 text-sm font-black tracking-wide text-white shadow-[0_14px_28px_rgba(255,59,141,0.28)] transition hover:-translate-y-0.5 hover:bg-[#e9327d] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3B8D] focus-visible:ring-offset-4"
-            >
-              <Sparkles className="h-4 w-4" />
-              SURPRISE ME
-            </button>
-          </div>
-        </section>
-
-        <section className="relative mt-8 rounded-[2rem] border border-white bg-white/80 p-4 shadow-[0_18px_45px_rgba(16,32,74,0.08)] backdrop-blur sm:p-5">
-          <div className="flex flex-col gap-3 lg:flex-row">
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#667085]" />
-              <Input
-                placeholder="Search games, skills or categories"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                className="h-12 rounded-full border-[#D7DEEA] bg-white pl-12 text-base font-semibold shadow-sm focus-visible:ring-[#08AAA7]"
-              />
-            </div>
-            <label className="relative">
-              <span className="sr-only">Sort games</span>
-              <select
-                value={sortMode}
-                onChange={(event) => setSortMode(event.target.value as typeof sortMode)}
-                className="h-12 w-full appearance-none rounded-full border border-[#D7DEEA] bg-white py-0 pl-4 pr-10 text-sm font-bold text-[#10204A] shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#08AAA7] lg:w-48"
-              >
-                <option value="default">World order</option>
-                <option value="name-asc">Name A–Z</option>
-                <option value="name-desc">Name Z–A</option>
-                <option value="recent">Recently played</option>
-              </select>
-              <ArrowDownUp className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#667085]" />
-            </label>
-          </div>
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-            <CategoryButton active={!activeCategory} onClick={() => setCategory(null)}>
-              All skills
-            </CategoryButton>
-            {categories.map((category) => (
-              <CategoryButton
-                key={category}
-                active={activeCategory === category}
-                onClick={() => setCategory(category)}
-              >
-                {formatCategory(category)}
-              </CategoryButton>
-            ))}
-            {isExploring && (
+            <div className="flex shrink-0 flex-col items-end gap-7">
               <button
                 type="button"
-                onClick={resetFilters}
-                className="shrink-0 px-3 text-sm font-extrabold text-[#087E7D] underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#08AAA7]"
+                onClick={surpriseMe}
+                disabled={!games.length}
+                className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-[#FF3B8D] px-12 text-sm font-black tracking-wide text-white shadow-[0_14px_28px_rgba(255,59,141,0.22)] transition hover:-translate-y-0.5 hover:bg-[#e9327d] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3B8D] focus-visible:ring-offset-4"
               >
-                Reset
+                <Sparkles className="h-4 w-4" />
+                SURPRISE ME ★
               </button>
-            )}
+              <div className="relative hidden w-[425px] rounded-[1.4rem] border border-[#DFE5EE] bg-white px-7 py-5 shadow-[0_14px_30px_rgba(16,32,74,0.08)] lg:flex lg:items-center lg:gap-5">
+                <img src="/primkeet-logo.png" alt="" className="h-11 w-20 object-contain" />
+                <p className="text-base font-black">
+                  Pick a world,
+                  <br />
+                  <span className="text-sm font-bold text-[#667085]">then choose your game!</span>
+                </p>
+                <span className="absolute -bottom-4 left-12 h-5 w-5 rotate-45 border-b border-r border-[#DFE5EE] bg-white" />
+              </div>
+            </div>
           </div>
         </section>
 
@@ -340,13 +281,12 @@ function LearningWorldsPage() {
           </Suspense>
         ) : (
           <Suspense fallback={<GameGridSkeleton />}>
-            <section className="relative mt-10 space-y-8">
-              {WORLDS.map((world, index) => (
+            <section className="relative mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-12 xl:items-start xl:gap-x-7 xl:gap-y-9">
+              {WORLDS.map((world) => (
                 <LearningWorldSection
                   key={world.key}
                   world={world}
                   games={games.filter((game) => getWorldForGame(game) === world.key)}
-                  offset={index % 2 === 1}
                 />
               ))}
             </section>
@@ -357,36 +297,43 @@ function LearningWorldsPage() {
   );
 }
 
-function LearningWorldSection({
-  world,
-  games,
-  offset,
-}: {
-  world: LearningWorld;
-  games: Game[];
-  offset: boolean;
-}) {
+function LearningWorldSection({ world, games }: { world: LearningWorld; games: Game[] }) {
   const Icon = world.icon;
   return (
     <section
       className={cn(
-        "relative overflow-hidden rounded-[2rem] p-5 shadow-[0_18px_42px_rgba(16,32,74,0.10)] sm:p-7 lg:p-9",
-        offset && "xl:ml-12",
+        "relative overflow-hidden rounded-[2rem] p-5 shadow-[0_18px_42px_rgba(16,32,74,0.10)] sm:p-6",
+        world.key === "word" && "xl:col-span-3 xl:mt-0",
+        world.key === "creative" && "xl:col-span-3 xl:mt-16",
+        world.key === "quiz" && "xl:col-span-3 xl:mt-0",
+        world.key === "strategy" && "xl:col-start-9 xl:col-span-3 xl:-mt-5",
       )}
       style={{ backgroundColor: world.soft }}
     >
       <div className="pointer-events-none absolute -right-12 -top-14 h-44 w-44 rounded-full bg-white/45" />
-      <div className="relative grid gap-7 xl:grid-cols-[260px_minmax(0,1fr)] xl:items-start">
+      <div className="relative">
         <header>
-          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-white shadow-sm">
-            <Icon className="h-7 w-7" style={{ color: world.accent }} />
-          </span>
-          <h2 className="mt-5 text-3xl font-black tracking-tight">{world.title}</h2>
-          <p className="mt-2 text-sm font-bold leading-6 text-[#52617E]">{world.description}</p>
+          <div className="flex items-center gap-3">
+            <span
+              className="grid h-14 w-14 place-items-center rounded-full text-white"
+              style={{ backgroundColor: world.accent }}
+            >
+              <Icon className="h-6 w-6" />
+            </span>
+            <div>
+              <h2
+                className="text-base font-black uppercase tracking-tight"
+                style={{ color: world.accent }}
+              >
+                {world.title}
+              </h2>
+              <p className="mt-1 text-sm font-bold text-[#667085]">{world.description}</p>
+            </div>
+          </div>
         </header>
-        <div>
+        <div className="mt-5">
           {games.length ? (
-            <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3">
               {games.map((game) => (
                 <WorldGameCard key={game.slug} game={game} world={world} />
               ))}
@@ -409,9 +356,9 @@ function WorldGameCard({ game, world }: { game: Game; world: LearningWorld }) {
   const route = PORTED_ROUTES[game.slug];
   const trackGameVisit = useHubStore((state) => state.trackGameVisit);
   const content = (
-    <article className="group flex h-full min-h-48 overflow-hidden rounded-2xl border border-white bg-white p-3 shadow-[0_10px_22px_rgba(16,32,74,0.08)] transition hover:-translate-y-1 hover:shadow-[0_16px_30px_rgba(16,32,74,0.14)]">
+    <article className="group flex h-full min-h-[164px] flex-col overflow-hidden rounded-[1.25rem] border border-white bg-white p-3 shadow-[0_8px_18px_rgba(16,32,74,0.06)] transition hover:-translate-y-1 hover:shadow-[0_16px_30px_rgba(16,32,74,0.14)]">
       <div
-        className="grid w-24 shrink-0 place-items-center overflow-hidden rounded-xl sm:w-28"
+        className="grid h-[82px] w-full shrink-0 place-items-center overflow-hidden rounded-xl"
         style={{ backgroundColor: display.soft }}
       >
         {artwork && !imageFailed ? (
@@ -426,25 +373,14 @@ function WorldGameCard({ game, world }: { game: Game; world: LearningWorld }) {
           <ArtworkFallback display={display} compact />
         )}
       </div>
-      <div className="flex min-w-0 flex-1 flex-col px-3 py-1">
-        <div
-          className="flex items-center gap-1.5 text-xs font-extrabold"
-          style={{ color: world.accent }}
-        >
-          <display.icon className="h-3.5 w-3.5" />
-          {display.focus}
-        </div>
-        <h3 className="mt-2 truncate text-lg font-black">{display.title}</h3>
-        <p className="mt-1 line-clamp-2 text-xs font-semibold leading-5 text-[#667085]">
-          {display.description}
-        </p>
-        <div className="mt-auto flex items-center justify-between gap-2 pt-3">
-          <span className="text-xs font-bold text-[#667085]">{display.category}</span>
+      <div className="flex min-w-0 flex-1 flex-col px-1 pt-2">
+        <h3 className="truncate text-sm font-black">{display.title}</h3>
+        <div className="mt-auto pt-2">
           <span
-            className="inline-flex h-9 items-center gap-1 rounded-full px-3 text-xs font-black text-white"
+            className="flex h-7 w-full items-center justify-center rounded-full text-[10px] font-black text-white"
             style={{ backgroundColor: world.accent }}
           >
-            PLAY <ArrowRight className="h-3.5 w-3.5" />
+            PLAY
           </span>
         </div>
       </div>

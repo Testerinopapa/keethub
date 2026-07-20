@@ -1,14 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AvatarPreview } from "./AvatarPreview";
 import type { AvatarConfig } from "@/lib/avatar/config";
@@ -33,15 +24,11 @@ import { toast } from "sonner";
 import { useRef } from "react";
 
 interface AvatarCustomizerProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   onSave: (config: AvatarConfig) => void | Promise<void>;
   initialConfig?: AvatarConfig | null;
 }
 
 export function AvatarCustomizer({
-  open,
-  onOpenChange,
   onSave,
   initialConfig,
 }: AvatarCustomizerProps) {
@@ -53,17 +40,15 @@ export function AvatarCustomizer({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (open) {
-      if (initialConfig) {
-        const cloned = cloneAvatarConfig(initialConfig);
-        if (validateAvatarConfig(cloned)) {
-          setConfig(cloned);
-        } else {
-          setConfig(sanitizeAvatarConfig(cloned as Record<string, any>));
-        }
+    if (initialConfig) {
+      const cloned = cloneAvatarConfig(initialConfig);
+      if (validateAvatarConfig(cloned)) {
+        setConfig(cloned);
+      } else {
+        setConfig(sanitizeAvatarConfig(cloned as Record<string, any>));
       }
     }
-  }, [initialConfig, open]);
+  }, [initialConfig]);
 
   const updateConfig = useCallback(
     (updates: Partial<AvatarConfig> | ((prev: AvatarConfig) => Partial<AvatarConfig>)) => {
@@ -91,12 +76,11 @@ export function AvatarCustomizer({
     }
     try {
       await onSave(config);
-      onOpenChange(false);
       toast.success("Avatar saved successfully!");
     } catch {
       toast.error("Failed to save avatar. Please try again.");
     }
-  }, [config, onSave, onOpenChange]);
+  }, [config, onSave]);
 
   const handleReset = () => {
     setConfig(createDefaultAvatarConfig(config.name));
@@ -176,46 +160,35 @@ export function AvatarCustomizer({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl w-[95vw] h-[85vh] max-h-[600px] flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-4">
-          <DialogTitle>Customize Your Avatar</DialogTitle>
-          <DialogDescription>
-            Personalize your avatar with custom skin tone, clothes, accessories, and more
-          </DialogDescription>
-        </DialogHeader>
+    <section className="overflow-hidden rounded-[24px] border border-[#E4EAF4] bg-white p-5 shadow-[0_12px_30px_rgba(40,69,120,0.08)] lg:p-6" aria-labelledby="avatar-studio-heading">
+      <div className="mb-5 flex items-center gap-3">
+        <span className="grid h-10 w-10 place-items-center rounded-full bg-[#FFF0F6] text-xl">🧑‍🎨</span>
+        <div>
+          <h2 id="avatar-studio-heading" className="text-lg font-extrabold text-[#10204A]">Avatar Studio</h2>
+          <p className="text-sm font-medium text-[#73809A]">Create your unique look</p>
+        </div>
+      </div>
 
-        <div className="flex-1 flex gap-6 px-6 pb-6 overflow-hidden">
+      <div className="flex flex-col gap-6 lg:flex-row">
           {/* Left Side - Preview */}
-          <div className="w-[300px] flex-shrink-0 flex flex-col gap-4">
-            <div className="flex-1 flex items-center justify-center bg-muted rounded-lg p-4">
-              <AvatarPreview config={config} size={200} />
+          <div className="flex flex-col items-center gap-4 lg:w-[270px] lg:flex-shrink-0">
+            <div className="relative flex h-[230px] w-full items-center justify-center overflow-hidden rounded-[22px] bg-[radial-gradient(circle_at_50%_55%,#F4E7FF_0%,#FFF_62%)]">
+              <div className="absolute bottom-5 h-8 w-44 rounded-[100%] bg-[#EBD8FF] blur-sm" />
+              <div className="relative rounded-full border-4 border-white shadow-[0_10px_28px_rgba(178,105,255,0.28)]">
+                <AvatarPreview config={config} size={170} />
+              </div>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="avatar-name">Avatar Name</Label>
-              <Input
-                id="avatar-name"
-                value={config.name}
-                onChange={(e) => updateConfig({ name: e.target.value })}
-                placeholder="My Avatar"
-                maxLength={30}
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleRandomize} className="flex-1">
+            <div className="grid w-full grid-cols-2 gap-2">
+              <Button variant="outline" onClick={handleRandomize} className="border-[#CDB6FF] text-[#7946E8] hover:bg-[#F7F1FF]">
                 <Shuffle className="w-4 h-4 mr-2" />
                 Randomize
               </Button>
-              <Button variant="outline" onClick={handleReset} className="flex-1">
+              <Button variant="outline" onClick={handleReset} className="border-[#9EDDE0] text-[#08AAA7] hover:bg-[#ECFBFA]">
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Reset
               </Button>
             </div>
-
-            <div className="space-y-2">
-              <Label>Custom Image</Label>
+            <div className="w-full">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -229,7 +202,7 @@ export function AvatarCustomizer({
                   variant="outline"
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex-1"
+                  className="flex-1 border-[#9EDDE0] text-[#08AAA7] hover:bg-[#ECFBFA]"
                 >
                   <Upload className="w-4 h-4 mr-2" />
                   {config.customImageUrl ? "Change" : "Upload"}
@@ -246,18 +219,14 @@ export function AvatarCustomizer({
                   </Button>
                 )}
               </div>
-              {config.customImageUrl && (
-                <p className="text-xs text-muted-foreground">
-                  Using custom image instead of generated avatar
-                </p>
-              )}
+              <p className="mt-2 text-center text-xs font-medium text-[#8190AA]">Use your own image as avatar</p>
             </div>
           </div>
 
           {/* Right Side - Customization Options */}
-          <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex min-w-0 flex-1 flex-col border-t border-[#E8ECF4] pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
             <Tabs defaultValue="skin" className="flex-1 flex flex-col min-h-0">
-              <TabsList className="grid w-full grid-cols-6 mb-4">
+              <TabsList className="grid h-auto w-full grid-cols-3 gap-1 rounded-xl bg-[#F6F8FC] p-1 md:grid-cols-6">
                 <TabsTrigger value="skin">Skin</TabsTrigger>
                 <TabsTrigger value="hair">Hair</TabsTrigger>
                 <TabsTrigger value="clothes">Clothes</TabsTrigger>
@@ -266,7 +235,7 @@ export function AvatarCustomizer({
                 <TabsTrigger value="style">Style</TabsTrigger>
               </TabsList>
 
-              <div className="flex-1 overflow-y-auto pr-2">
+              <div className="min-h-[190px] flex-1 overflow-y-auto pr-2 pt-4">
                 <TabsContent value="skin" className="mt-0">
                   <SkinToneSelector
                     selectedTone={config.skinTone}
@@ -334,18 +303,13 @@ export function AvatarCustomizer({
               </div>
             </Tabs>
 
-            {/* Action Buttons */}
-            <div className="flex gap-2 pt-4 border-t mt-4">
-              <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-                Cancel
-              </Button>
-              <Button onClick={handleSave} className="flex-1">
+            <div className="mt-4 flex justify-end border-t border-[#E8ECF4] pt-4">
+              <Button onClick={handleSave} className="min-w-36 bg-[#FF3B8D] font-bold shadow-[0_7px_16px_rgba(255,59,141,0.25)] hover:bg-[#E92B7B]">
                 Save Avatar
               </Button>
             </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </section>
   );
 }

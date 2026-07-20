@@ -64,14 +64,12 @@ test.describe("Profile & Avatar", () => {
     await expect(page.getByText("Profile updated")).toBeVisible({ timeout: 10_000 });
   });
 
-  test("avatar customizer dialog opens and has tabs", async () => {
+  test("avatar studio is embedded in the profile page and has tabs", async () => {
     const page = session!.page;
     await page.goto("/hub/profile");
 
-    // Click avatar preview to open customizer
-    await page.locator("button").filter({ hasText: "Customize avatar" }).click();
-    await expect(page.getByRole("dialog")).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByText("Customize Your Avatar")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Avatar Studio" })).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole("dialog")).not.toBeVisible();
 
     // Verify all 6 category tabs exist
     for (const tab of ["Skin", "Hair", "Clothes", "Accessories", "Face", "Style"]) {
@@ -95,7 +93,6 @@ test.describe("Profile & Avatar", () => {
 
     // Save avatar
     await page.getByRole("button", { name: "Save Avatar" }).click();
-    await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 5_000 });
     await expect(page.getByText("Avatar saved successfully!")).toBeVisible({ timeout: 5_000 });
   });
 
@@ -103,14 +100,10 @@ test.describe("Profile & Avatar", () => {
     const page = session!.page;
     await page.goto("/hub/profile");
 
-    await page.locator("button").filter({ hasText: "Customize avatar" }).click();
-    await expect(page.getByRole("dialog")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole("heading", { name: "Avatar Studio" })).toBeVisible({ timeout: 5_000 });
 
     // Click Reset
     await page.getByRole("button", { name: "Reset" }).click();
 
-    // Cancel (don't save)
-    await page.getByRole("button", { name: "Cancel" }).click();
-    await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 5_000 });
   });
 });

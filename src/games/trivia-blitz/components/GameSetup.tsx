@@ -1,17 +1,100 @@
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play } from "lucide-react";
+import { Play, Users } from "lucide-react";
 import { useTriviaStore } from "../store";
 import { cn } from "@/lib/utils";
+import MultiplayerLobby from "./MultiplayerLobby";
+import type { TriviaRoomState } from "../hooks/useTriviaMultiplayer";
 
-export default function GameSetup() {
+type Mode = "solo" | "multiplayer";
+
+interface MultiplayerActions {
+  state: TriviaRoomState | null;
+  action: string | null;
+  onCreateRoom: (name: string) => Promise<{ roomId: string; roomCode: string }>;
+  onJoinRoom: (code: string) => Promise<void>;
+  onLeaveRoom: () => Promise<void>;
+  onSetReady: (isReady: boolean) => Promise<void>;
+  onSelectCategory: (categoryId: string) => Promise<void>;
+  onStartGame: () => Promise<void>;
+}
+
+interface Props {
+  multiplayer?: MultiplayerActions;
+  defaultMode?: Mode;
+}
+
+export default function GameSetup({ multiplayer, defaultMode = "solo" }: Props) {
+  const [mode, setMode] = useState<Mode>(defaultMode);
   const quizzes = useTriviaStore((s) => s.availableQuizzes);
   const selectedId = useTriviaStore((s) => s.categoryId);
   const startGame = useTriviaStore((s) => s.startGame);
 
+  // ── Multiplayer mode ─────────────────────────────────────────
+  if (mode === "multiplayer" && multiplayer) {
+    return (
+      <div>
+        {/* Mode tabs */}
+        <div className="flex justify-center mb-6">
+          <div className="inline-flex rounded-lg border border-border bg-muted p-1">
+            <button
+              type="button"
+              onClick={() => setMode("solo")}
+              className="px-4 py-1.5 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Play className="w-4 h-4 inline mr-1" />
+              Solo
+            </button>
+            <button
+              type="button"
+              className="px-4 py-1.5 rounded-md text-sm font-medium bg-background text-foreground shadow-sm"
+            >
+              <Users className="w-4 h-4 inline mr-1" />
+              Multiplayer
+            </button>
+          </div>
+        </div>
+
+        <MultiplayerLobby
+          state={multiplayer.state}
+          action={multiplayer.action}
+          onCreateRoom={multiplayer.onCreateRoom}
+          onJoinRoom={multiplayer.onJoinRoom}
+          onLeaveRoom={multiplayer.onLeaveRoom}
+          onSetReady={multiplayer.onSetReady}
+          onSelectCategory={multiplayer.onSelectCategory}
+          onStartGame={multiplayer.onStartGame}
+        />
+      </div>
+    );
+  }
+
+  // ── Solo mode ────────────────────────────────────────────────
   return (
     <div className="max-w-3xl mx-auto px-4 py-4 md:py-8">
+      {/* Mode tabs */}
+      <div className="flex justify-center mb-6">
+        <div className="inline-flex rounded-lg border border-border bg-muted p-1">
+          <button
+            type="button"
+            className="px-4 py-1.5 rounded-md text-sm font-medium bg-background text-foreground shadow-sm"
+          >
+            <Play className="w-4 h-4 inline mr-1" />
+            Solo
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("multiplayer")}
+            className="px-4 py-1.5 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Users className="w-4 h-4 inline mr-1" />
+            Multiplayer
+          </button>
+        </div>
+      </div>
+
       <div className="text-center mb-6 md:mb-8">
         <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-gradient-primary mb-3">
           Trivia Blitz

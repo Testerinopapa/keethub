@@ -16,7 +16,6 @@ import Scoreboard from "@/games/trivia-blitz/components/Scoreboard";
 import FinalPodium from "@/games/trivia-blitz/components/FinalPodium";
 import MultiplayerQuestionView from "@/games/trivia-blitz/components/MultiplayerQuestionView";
 import MultiplayerAnswerReveal from "@/games/trivia-blitz/components/MultiplayerAnswerReveal";
-import MultiplayerScoreboard from "@/games/trivia-blitz/components/MultiplayerScoreboard";
 import MultiplayerFinalPodium from "@/games/trivia-blitz/components/MultiplayerFinalPodium";
 
 const TRIVIA_LOCAL: Game = LOCAL_GAMES.find((g) => g.slug === "trivia-blitz")!.data;
@@ -221,7 +220,14 @@ function TriviaBlitzRoute() {
           return <MultiplayerAnswerReveal state={mpState} />;
 
         case "scoring":
-          return <MultiplayerScoreboard state={mpState} />;
+          return (
+            <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
+              <h2 className="text-2xl font-black text-[#10204A]">Updating scores...</h2>
+              <p className="text-sm font-semibold text-[#667085]">
+                Question {mpState.room.roundNumber} of {mpState.room.maxRounds}
+              </p>
+            </div>
+          );
 
         case "finished":
           return (

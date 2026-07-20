@@ -235,7 +235,7 @@ function LearningWorldsPage() {
     <div className="min-h-[calc(100vh-5.5rem)] overflow-x-clip bg-[#FFFCF7] text-[#10204A]">
       <div className="relative mx-auto w-full max-w-[1600px] px-5 pb-10 pt-10 sm:px-8 lg:px-16 lg:pt-11">
         <section className="relative z-10">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <h1 className="text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl">
                 Where do you want to learn today?
@@ -244,7 +244,7 @@ function LearningWorldsPage() {
                 Every world groups games by the skill they build.
               </p>
             </div>
-            <div className="flex w-full shrink-0 flex-col items-end gap-6 lg:w-[400px]">
+            <div className="relative z-30 flex w-full shrink-0 flex-col gap-4 sm:items-start lg:w-auto lg:items-end">
               <button
                 type="button"
                 onClick={surpriseMe}
@@ -276,7 +276,7 @@ function LearningWorldsPage() {
 
 function MascotCallout() {
   return (
-    <div className="relative flex w-full max-w-[400px] items-center gap-4 rounded-[1.4rem] border border-[#DFE5EE] bg-white px-5 py-4 shadow-[0_14px_30px_rgba(16,32,74,0.08)]">
+    <div className="relative hidden w-full max-w-[330px] items-center gap-4 rounded-[1.4rem] border border-[#DFE5EE] bg-white px-5 py-4 shadow-[0_14px_30px_rgba(16,32,74,0.08)] sm:flex">
       <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full bg-[#ECFBFA]">
         <img
           src="/primkeet-logo.png"
@@ -310,8 +310,8 @@ function LearningWorldMap({
     return [world, picks] as const;
   });
   return (
-    <section className="relative mt-5 lg:mt-2">
-      <div className="relative grid gap-5 md:grid-cols-2 xl:block xl:h-[660px]">
+    <section className="relative mt-8 lg:mt-6">
+      <div className="relative grid gap-5 md:grid-cols-2 xl:block xl:min-h-[720px] xl:pb-10">
         <JourneyPath />
         {featured.map(([world, worldGames]) => (
           <LearningWorldPanel
@@ -330,18 +330,18 @@ function LearningWorldMap({
 function JourneyPath() {
   return (
     <svg
-      className="pointer-events-none absolute inset-0 z-0 hidden h-full w-full xl:block"
+      className="pointer-events-none absolute inset-0 z-10 hidden h-full w-full xl:block"
       aria-hidden="true"
-      viewBox="0 0 1500 660"
+      viewBox="0 0 1500 720"
       preserveAspectRatio="none"
     >
       <path
-        d="M260 175 C390 215 410 325 560 300 S825 120 925 190 S1130 390 1270 430"
+        d="M290 150 C385 180 400 410 555 405 S735 135 900 165 S1050 450 1225 475"
         fill="none"
         stroke="#BBC7D8"
         strokeWidth="5"
         strokeLinecap="round"
-        strokeDasharray="1 24"
+        strokeDasharray="2 18"
         opacity=".85"
       />
     </svg>
@@ -351,7 +351,7 @@ function JourneyPath() {
 function WeeklyProgress({ recentCount }: { recentCount: number }) {
   if (!recentCount) return null;
   return (
-    <aside className="hidden xl:block xl:absolute xl:bottom-0 xl:left-0 xl:z-10 xl:w-[322px] rounded-[1.4rem] border border-[#DFE5EE] bg-white px-6 py-4 shadow-[0_10px_24px_rgba(16,32,74,0.06)]">
+    <aside className="hidden xl:block xl:absolute xl:bottom-0 xl:left-0 xl:z-20 xl:w-[322px] rounded-[1.4rem] border border-[#DFE5EE] bg-white px-6 py-4 shadow-[0_10px_24px_rgba(16,32,74,0.06)]">
       <p className="text-xs font-black uppercase tracking-wide text-[#667085]">This week</p>
       <p className="mt-1 text-base font-black">
         {recentCount} {recentCount === 1 ? "game" : "games"} played
@@ -377,15 +377,15 @@ function LearningWorldPanel({
 }) {
   const Icon = world.icon;
   const position = {
-    word: "xl:left-0 xl:top-[20px]",
-    creative: "xl:left-[27%] xl:top-[85px]",
-    quiz: "xl:left-[54%] xl:top-[18px]",
-    strategy: "xl:right-[3%] xl:top-[325px]",
+    word: "xl:left-0 xl:top-0",
+    creative: "xl:left-[25%] xl:top-[330px]",
+    quiz: "xl:left-[52%] xl:top-[20px]",
+    strategy: "xl:right-0 xl:top-[390px]",
   }[world.key];
   return (
     <section
       className={cn(
-        "relative z-10 overflow-hidden rounded-[2rem] p-5 shadow-[0_18px_42px_rgba(16,32,74,0.10)] sm:p-6 xl:absolute xl:w-[350px]",
+        "relative z-20 min-h-[300px] overflow-hidden rounded-[2rem] p-5 shadow-[0_18px_42px_rgba(16,32,74,0.10)] sm:p-6 xl:absolute xl:h-[300px] xl:w-[350px]",
         position,
       )}
       style={{ backgroundColor: world.soft }}
@@ -399,7 +399,7 @@ function LearningWorldPanel({
           >
             <Icon className="h-5 w-5" />
           </span>
-          <div>
+          <div className="min-w-0">
             <h2
               className="text-base font-black uppercase tracking-tight"
               style={{ color: world.accent }}
@@ -416,27 +416,26 @@ function LearningWorldPanel({
                     : "Logic & planning"}
             </p>
           </div>
+          <button
+            type="button"
+            onClick={() => onViewWorld(world.key)}
+            className="ml-auto shrink-0 rounded-full px-2 py-1 text-xs font-black transition hover:bg-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            style={{ color: world.accent }}
+          >
+            View all
+          </button>
         </header>
-        <div className="mt-4 flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none]">
+        <div className="mt-4 grid grid-cols-2 gap-3">
           {games.length ? (
             games.map((game) => (
-              <div className="w-[calc(50%-6px)] min-w-[132px] flex-1" key={game.slug}>
-                <WorldGameCard game={game} />
-              </div>
+              <FeaturedWorldGameCard game={game} key={game.slug} world={world} />
             ))
           ) : (
-            <div className="w-full rounded-2xl border border-dashed border-white bg-white/55 p-6 text-sm font-bold text-[#667085]">
-              New games soon.
+            <div className="col-span-2 rounded-2xl border border-dashed border-white bg-white/55 p-6 text-center text-sm font-bold text-[#667085]">
+              New games are coming soon.
             </div>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => onViewWorld(world.key)}
-          className="mt-3 text-xs font-black underline decoration-2 underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10204A]"
-        >
-          View all
-        </button>
       </div>
     </section>
   );
@@ -464,21 +463,24 @@ function selectFeaturedGames(world: LearningWorld, games: Game[], used: Set<stri
     .slice(0, 2);
 }
 
-function WorldGameCard({ game }: { game: Game }) {
+function FeaturedWorldGameCard({ game, world }: { game: Game; world: LearningWorld }) {
   const [imageFailed, setImageFailed] = useState(false);
   const display = getGameDisplay(game);
   const artwork = getArtworkForGame(game);
   const route = PORTED_ROUTES[game.slug];
   const trackGameVisit = useHubStore((state) => state.trackGameVisit);
-  const content = (
-    <article
-      aria-label={`Play ${display.title}`}
-      className="group h-full min-h-[164px] overflow-hidden rounded-[1.25rem] border border-white bg-white shadow-[0_8px_18px_rgba(16,32,74,0.06)] transition hover:-translate-y-1 hover:shadow-[0_16px_30px_rgba(16,32,74,0.14)]"
-    >
-      <div
-        className="grid h-full min-h-[164px] w-full place-items-center overflow-hidden"
-        style={{ backgroundColor: display.soft }}
+  const destination = route
+    ? { to: route as never }
+    : { to: "/hub/games/$slug" as never, params: { slug: game.slug } as never };
+  return (
+    <article className="group h-[198px] min-w-0 overflow-hidden rounded-[1.25rem] border border-white bg-white p-2 shadow-[0_8px_18px_rgba(16,32,74,0.06)] transition hover:-translate-y-1 hover:shadow-[0_16px_30px_rgba(16,32,74,0.14)]">
+      <Link
+        {...destination}
+        onClick={() => trackGameVisit(game.slug)}
+        className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10204A] focus-visible:ring-offset-2"
+        aria-label={`Play ${display.title}`}
       >
+        <div className="aspect-[4/3] w-full overflow-hidden rounded-[0.9rem]" style={{ backgroundColor: display.soft }}>
         {artwork && !imageFailed ? (
           <img
             src={artwork}
@@ -488,9 +490,35 @@ function WorldGameCard({ game }: { game: Game }) {
             onError={() => setImageFailed(true)}
           />
         ) : (
-          <ArtworkFallback display={display} compact />
+          <ArtworkFallback display={display} />
         )}
+        </div>
+        <h3 className="mt-2 line-clamp-1 text-sm font-black leading-4 text-[#10204A]">{display.title}</h3>
+        <span
+          className="mt-2 flex h-7 w-full items-center justify-center rounded-lg text-xs font-black text-white"
+          style={{ backgroundColor: world.accent }}
+        >
+          Play
+        </span>
+      </Link>
+    </article>
+  );
+}
+
+function WorldGameCard({ game }: { game: Game }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const display = getGameDisplay(game);
+  const artwork = getArtworkForGame(game);
+  const route = PORTED_ROUTES[game.slug];
+  const trackGameVisit = useHubStore((state) => state.trackGameVisit);
+  const content = (
+    <article className="overflow-hidden rounded-[1.25rem] border border-white bg-white p-3 shadow-[0_8px_18px_rgba(16,32,74,0.06)]">
+      <div className="aspect-[16/9] w-full overflow-hidden rounded-xl" style={{ backgroundColor: display.soft }}>
+        {artwork && !imageFailed ? <img src={artwork} alt={`${display.title} artwork`} loading="lazy" className="h-full w-full object-cover" onError={() => setImageFailed(true)} /> : <ArtworkFallback display={display} />}
       </div>
+      <h3 className="mt-3 text-base font-black">{display.title}</h3>
+      <p className="mt-1 line-clamp-2 text-sm font-semibold text-[#667085]">{display.description}</p>
+      <span className="mt-3 flex h-9 items-center justify-center rounded-lg text-sm font-black text-white" style={{ backgroundColor: display.accent }}>Play</span>
     </article>
   );
   const props = {
@@ -559,18 +587,17 @@ function DiscoveryResults({
 
 function ArtworkFallback({
   display,
-  compact = false,
 }: {
   display: GameDisplay;
-  compact?: boolean;
 }) {
   const Icon = display.icon;
   return (
     <div className="relative flex h-full w-full items-center justify-center overflow-hidden p-2">
-      <span className="absolute -left-3 -top-3 h-11 w-11 rounded-full bg-white/70" />
-      <span className="absolute -bottom-5 right-2 h-14 w-14 rounded-full bg-white/50" />
+      <span className="absolute -left-3 -top-3 h-16 w-16 rounded-full bg-white/70" />
+      <span className="absolute -bottom-5 right-2 h-20 w-20 rounded-full bg-white/50" />
+      <span className="absolute right-3 top-2 text-xs font-black uppercase tracking-widest text-[#10204A]/35">{display.title.slice(0, 2)}</span>
       <Icon
-        className={cn("relative text-current", compact ? "h-7 w-7" : "h-10 w-10")}
+        className="relative h-10 w-10 text-current"
         style={{ color: display.accent }}
       />
     </div>

@@ -58,7 +58,7 @@ function HubLayout() {
           <AppSidebar />
         </div>
         <SidebarInset className="flex flex-1 flex-col bg-[#FBFDFF]">
-          <header className="sticky top-0 z-10 flex h-[88px] items-center gap-4 border-b border-[#E8ECF4] bg-white/92 px-5 backdrop-blur md:px-12">
+          <header className="sticky top-0 z-40 flex min-h-[88px] shrink-0 items-center gap-4 border-b border-[#E8ECF4] bg-white/92 px-5 backdrop-blur md:px-12">
             <SidebarTrigger className="h-10 w-10 rounded-full border border-[#E8ECF4] bg-white text-[#10204A] shadow-sm hover:bg-[#ECFBFA] hover:text-[#08AAA7] md:hidden" />
             <Link
               to="/hub"
@@ -92,7 +92,7 @@ function HubLayout() {
                 Profile
               </Link>
             </nav>
-            <div className="relative ml-auto hidden w-full max-w-[300px] sm:block">
+            <div className="relative ml-auto hidden w-full max-w-[300px] xl:block">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#8190AA]" />
               <Input
                 value={search}

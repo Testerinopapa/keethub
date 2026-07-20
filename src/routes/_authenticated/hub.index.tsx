@@ -421,7 +421,7 @@ function LearningWorldPanel({
           {games.length ? (
             games.map((game) => (
               <div className="w-[calc(50%-6px)] min-w-[132px] flex-1" key={game.slug}>
-                <WorldGameCard game={game} world={world} />
+                <WorldGameCard game={game} />
               </div>
             ))
           ) : (
@@ -464,16 +464,19 @@ function selectFeaturedGames(world: LearningWorld, games: Game[], used: Set<stri
     .slice(0, 2);
 }
 
-function WorldGameCard({ game, world }: { game: Game; world: LearningWorld }) {
+function WorldGameCard({ game }: { game: Game }) {
   const [imageFailed, setImageFailed] = useState(false);
   const display = getGameDisplay(game);
   const artwork = getArtworkForGame(game);
   const route = PORTED_ROUTES[game.slug];
   const trackGameVisit = useHubStore((state) => state.trackGameVisit);
   const content = (
-    <article className="group flex h-full min-h-[164px] flex-col overflow-hidden rounded-[1.25rem] border border-white bg-white p-3 shadow-[0_8px_18px_rgba(16,32,74,0.06)] transition hover:-translate-y-1 hover:shadow-[0_16px_30px_rgba(16,32,74,0.14)]">
+    <article
+      aria-label={`Play ${display.title}`}
+      className="group h-full min-h-[164px] overflow-hidden rounded-[1.25rem] border border-white bg-white shadow-[0_8px_18px_rgba(16,32,74,0.06)] transition hover:-translate-y-1 hover:shadow-[0_16px_30px_rgba(16,32,74,0.14)]"
+    >
       <div
-        className="grid h-[82px] w-full shrink-0 place-items-center overflow-hidden rounded-xl"
+        className="grid h-full min-h-[164px] w-full place-items-center overflow-hidden"
         style={{ backgroundColor: display.soft }}
       >
         {artwork && !imageFailed ? (
@@ -481,25 +484,12 @@ function WorldGameCard({ game, world }: { game: Game; world: LearningWorld }) {
             src={artwork}
             alt={`${display.title} artwork`}
             loading="lazy"
-            className="h-full w-full object-contain"
+            className="h-full w-full object-cover"
             onError={() => setImageFailed(true)}
           />
         ) : (
           <ArtworkFallback display={display} compact />
         )}
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col px-1 pt-2">
-        <h3 className="min-h-9 overflow-hidden text-sm font-black leading-[1.1]">
-          {display.title}
-        </h3>
-        <div className="mt-auto pt-2">
-          <span
-            className="flex h-7 w-full items-center justify-center rounded-full text-[10px] font-black text-white"
-            style={{ backgroundColor: world.accent }}
-          >
-            PLAY
-          </span>
-        </div>
       </div>
     </article>
   );
@@ -551,7 +541,6 @@ function DiscoveryResults({
             <WorldGameCard
               key={game.slug}
               game={game}
-              world={WORLDS.find((world) => world.key === getWorldForGame(game))!}
             />
           ))}
         </div>

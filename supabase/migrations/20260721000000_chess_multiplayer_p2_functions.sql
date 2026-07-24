@@ -75,7 +75,16 @@ BEGIN
   -- Check if already in this room
   IF EXISTS (SELECT 1 FROM public.chess_players p
     WHERE p.room_id = target_room.id AND p.user_id = current_user_id) THEN
-    RETURN jsonb_build_object('success', false, 'error', 'Already in this room');
+    -- Reconnect: set connected and return success
+    UPDATE public.chess_players p
+    SET is_connected = true WHERE p.room_id = target_room.id AND p.user_id = current_user_id;
+
+    UPDATE public.chess_rooms r SET last_activity_at = now() WHERE r.id = target_room.id;
+
+    RETURN jsonb_build_object(
+      'success', true, 'roomId', target_room.id,
+      'roomCode', target_room.room_code
+    );
   END IF;
 
   SELECT COUNT(*) INTO player_count FROM public.chess_players p
@@ -86,7 +95,7 @@ BEGIN
   END IF;
 
   IF target_room.status <> 'waiting' THEN
-    RETURN jsonb_build_object('success', false, 'error', 'Game already started');
+    RETURN jsonb_build_object('success', false, 'error', 'Game already ' || target_room.status);
   END IF;
 
   SELECT p.username, COALESCE(p.avatar_config, '{}'::jsonb)
@@ -148,10 +157,28 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error', 'Only the host can start');
   END IF;
 
-  IF room_row.status <> 'waiting' THEN
+  IF room_row.status = 'playing' THEN
     RETURN jsonb_build_object('success', false, 'error', 'Game already started');
   END IF;
 
+  -- If finished, allow rematch: reset board state
+  IF room_row.status = 'finished' THEN
+    DELETE FROM public.chess_moves m WHERE m.room_id = p_room_id;
+
+    UPDATE public.chess_players p
+    SET is_connected = true WHERE p.room_id = p_room_id;
+
+    UPDATE public.chess_rooms r
+    SET status = 'playing',
+        current_fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+        pgn = '',
+        result = NULL
+    WHERE r.id = p_room_id;
+
+    RETURN jsonb_build_object('success', true);
+  END IF;
+
+  -- Fresh start from waiting
   SELECT COUNT(*) INTO player_count FROM public.chess_players p
   WHERE p.room_id = p_room_id AND p.is_connected = true;
 

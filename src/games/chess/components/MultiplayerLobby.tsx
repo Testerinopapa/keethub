@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Crown, LogOut, Play, Users, Copy, Clipboard } from "lucide-react";
+import { Crown, LogOut, Play, Users, Copy, Clipboard, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { ChessRoomState } from "../hooks/useChessMultiplayer";
@@ -61,6 +61,8 @@ export default function MultiplayerLobby({
       toast.success("Code copied!");
     }
   };
+
+  const isFinished = state?.room.status === "finished";
 
   // ── In-room lobby ───────────────────────────────────────────────
   if (isInRoom) {
@@ -150,8 +152,13 @@ export default function MultiplayerLobby({
               disabled={!bothConnected || action !== null}
               onClick={() => onStartGame().catch((e) => toast.error(e instanceof Error ? e.message : "Failed"))}
             >
-              <Play className="w-4 h-4 mr-2" />
-              {!bothConnected ? "Waiting for opponent..." : "Start Game"}
+              {isFinished ? (
+                <><RotateCcw className="w-4 h-4 mr-2" /> Play Again</>
+              ) : !bothConnected ? (
+                <><Play className="w-4 h-4 mr-2" /> Waiting for opponent...</>
+              ) : (
+                <><Play className="w-4 h-4 mr-2" /> Start Game</>
+              )}
             </Button>
           )}
         </div>

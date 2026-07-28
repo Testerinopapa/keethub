@@ -21,8 +21,8 @@ interface GameStageProps {
 
 export function GameStage({ onLeaveRoom }: GameStageProps) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 pt-4 md:px-5">
-      <div className="grid min-h-0 flex-1 gap-4 grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)_280px] xl:grid-cols-[260px_minmax(0,1fr)_300px] 2xl:grid-cols-[280px_minmax(0,1fr)_320px]">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-4 pt-4 lg:overflow-y-visible md:px-5">
+      <div className="grid min-h-0 gap-4 grid-cols-1 lg:flex-1 lg:grid-cols-[240px_minmax(0,1fr)_280px] xl:grid-cols-[260px_minmax(0,1fr)_300px] 2xl:grid-cols-[280px_minmax(0,1fr)_320px]">
         <div className="order-2 flex min-h-0 flex-col gap-3 lg:order-1">
           <div className="min-h-0 flex-1 overflow-y-auto">
             <PlayerList />

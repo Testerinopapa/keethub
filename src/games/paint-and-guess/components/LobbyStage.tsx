@@ -54,7 +54,7 @@ export function LobbyStage({
   }, [onReadyToggle]);
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-5rem)] max-w-7xl flex-col px-2 py-2 sm:px-4 sm:py-3 lg:px-6 lg:py-4">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 py-2 sm:px-4 sm:py-3 lg:px-6 lg:py-4">
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-[260px_minmax(0,1fr)_300px] xl:grid-cols-[280px_minmax(0,1fr)_320px]">
         {/* Left Sidebar - Players */}
         <div className="flex min-h-0 flex-col gap-3">

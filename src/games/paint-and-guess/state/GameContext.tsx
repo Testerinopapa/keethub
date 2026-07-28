@@ -727,21 +727,44 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const sendGuess = useCallback(
     async (guess: string) => {
-      if (!gameState.roomId || !channelRef.current) return;
+      if (!gameState.roomId) return;
 
-      const { data, error } = await supabase.rpc("submit_paint_guess", {
-        room_id: gameState.roomId,
-        guess,
-      });
-      const result = data as any;
-      console.log("[SUBMIT_GUESS] guess:", guess, "RPC:", JSON.stringify({ correct: result?.correct, alreadyGuessed: result?.already_guessed, error }));
+      if (!channelRef.current) {
+        toast.error("Connection lost — please rejoin the room");
+        setGameState(createInitialGameState());
+        setChatMessages([]);
+        return;
+      }
+
+      let result: any;
+      try {
+        const { data, error } = await supabase.rpc("submit_paint_guess", {
+          room_id: gameState.roomId,
+          guess,
+        });
+        if (error) {
+          toast.error("Failed to submit guess");
+          return;
+        }
+        result = data as any;
+      } catch (err) {
+        toast.error("Failed to submit guess");
+        return;
+      }
+
+      if (!result?.success) {
+        const rpcError = result?.error || "Unknown error";
+        if (rpcError === "Drawer cannot guess") return;
+        toast.error(rpcError);
+        return;
+      }
+
       const player = gameState.players.find((p) => p.id === gameState.selfId) || {
         id: gameState.selfId || "",
         name: gameState.playerName,
       };
 
-      if (result?.correct) {
-        console.log("[SEND_GUESS] correct guess by", player.name, "points:", result.points);
+      if (result.correct) {
         setChatMessages((prev) => [
           ...prev,
           createChatMessage(player, `Correctly guessed! +${result.points} points`, "correct-guess"),
@@ -751,31 +774,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
           points: result.points,
         });
         fetchRoomPlayers(gameState.roomId);
-
-        // Poll advanceRound until it succeeds.
-        void (async () => {
-          const tryRoomId = gameState.roomId;
-          if (!tryRoomId) { console.log("[RETRY] no roomId, abort"); return; }
-          for (let i = 0; i < 20; i++) {
-            await new Promise((r) => setTimeout(r, 500));
-            if (!channelRef.current || channelRef.current.id !== tryRoomId) {
-              console.log("[RETRY] iteration", i, "channel gone or room changed, abort");
-              return;
-            }
-            if (advanceCalledRef.current) {
-              console.log("[RETRY] iteration", i, "ref held, skipping");
-              continue;
-            }
-            // Debug: check all_guessers_finished directly
-            const { data: agf } = await supabase.rpc("all_guessers_finished", { p_room_id: tryRoomId });
-            console.log("[RETRY] iteration", i, "all_guessers_finished:", agf, "ref held:", advanceCalledRef.current, "calling advanceRound...");
-            await advanceRound(tryRoomId);
-            // If iteration logs show RPC success then the state should have
-            // updated. If it loops repeatedly, 'still in progress' is the problem.
-          }
-          console.log("[RETRY] exhausted 20 iterations without advancing");
-        })();
-      } else if (!result?.already_guessed) {
+        void advanceRound(gameState.roomId);
+      } else if (!result.already_guessed) {
         setChatMessages((prev) => [...prev, createChatMessage(player, guess, "wrong-guess")]);
         channelRef.current.broadcast("wrong-guess", { player, guess });
       }

@@ -90,6 +90,22 @@ export const LOCAL_GAMES: LocalGame[] = [
     },
   },
   {
+    slug: "scribble-battle",
+    route: "/hub/games/scribble-battle",
+    data: {
+      id: localId("scribble-battle"),
+      slug: "scribble-battle",
+      title: "Scribble Battle",
+      description:
+        "Team vs team drawing showdown. Two teams, one word — race to guess first! Real-time multiplayer.",
+      category: "party",
+      thumbnail_url: null,
+      accent_color: "#43A8EA",
+      is_active: true,
+      created_at: new Date().toISOString(),
+    },
+  },
+  {
     slug: "balderdash",
     route: "/hub/games/balderdash",
     data: {

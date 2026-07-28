@@ -79,6 +79,7 @@ const gameArtworkBySlug: Record<string, string> = {
   chess: "/games/chess-blitz-card.png",
   "scribble-scrattle": "/games/scribble-scrattle-card.png",
   "paint-and-guess": "/games/scribble-scrattle-card.png",
+  "scribble-battle": "/games/scribble-scrattle-card.png",
   "trivia-blitz": "/games/trivia-blitz-card.png",
   keetdash: "/games/keetdash-card.png",
   balderdash: "/games/keetdash-card.png",
@@ -125,6 +126,13 @@ const gameThemeBySlug: Record<string, GameTheme> = {
     accent: "#43A8EA",
     soft: "#ECFBFA",
     focus: "Draw and describe",
+    icon: Palette,
+  },
+  "scribble-battle": {
+    displayTitle: "Scribble Battle",
+    accent: "#43A8EA",
+    soft: "#ECFBFA",
+    focus: "Team drawing showdown",
     icon: Palette,
   },
   "trivia-blitz": {
@@ -186,7 +194,7 @@ function mergeGames(serverGames: Game[]): Game[] {
 function getWorldForGame(game: Game): WorldKey {
   const slug = normalizeKey(game.slug);
   if (["semanteek", "semantic", "keetdash", "balderdash"].includes(slug)) return "word";
-  if (["scribble-scrattle", "paint-and-guess"].includes(slug)) return "creative";
+  if (["scribble-scrattle", "paint-and-guess", "scribble-battle"].includes(slug)) return "creative";
   if (["trivia-blitz"].includes(slug)) return "quiz";
   if (["chess-blitz", "chess"].includes(slug)) return "strategy";
   const category = normalizeKey(game.category);

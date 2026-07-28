@@ -53,7 +53,7 @@ export function Chat() {
     (!isGameActive && gameState.players.length < 2) || gameState.phase === "round-ended";
 
   return (
-    <aside className="relative flex h-full min-h-[320px] flex-col overflow-hidden rounded-lg border border-[#E6EAF2] bg-white p-4 shadow-[0_14px_36px_rgba(16,32,74,0.08)]">
+    <aside className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-[#E6EAF2] bg-white p-3 lg:p-4 shadow-[0_14px_36px_rgba(16,32,74,0.08)]">
       <div className="pointer-events-none absolute right-5 top-16 h-16 w-16 rounded-full border-2 border-[#8BE0DE] opacity-60" />
       <div className="pointer-events-none absolute bottom-28 left-5 h-2 w-2 rounded-full bg-[#10B8B5]" />
       <div className="pointer-events-none absolute bottom-24 right-8 h-2 w-2 rounded-full bg-[#FF2F85]" />

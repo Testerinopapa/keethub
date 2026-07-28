@@ -193,7 +193,7 @@ export const Canvas = () => {
 
       <div
         ref={containerRef}
-        className="min-h-[340px] flex-1 overflow-hidden rounded-lg border border-[#E6EAF2] bg-white p-3 shadow-[0_16px_38px_rgba(16,32,74,0.08)]"
+        className="min-h-0 flex-1 overflow-hidden rounded-lg border border-[#E6EAF2] bg-white p-2 lg:p-3 shadow-[0_16px_38px_rgba(16,32,74,0.08)]"
       >
         <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-[#D9CCFF] bg-white">
           <canvas ref={canvasRef} className="max-h-full max-w-full" style={{ display: showOverlay ? "none" : "block" }} />

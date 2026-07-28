@@ -8,7 +8,7 @@ interface CanvasSize {
 
 interface UseCanvasLifecycleOptions {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
-  containerRef: React.RefObject<HTMLDivElement | null>;
+  innerContainerRef: React.RefObject<HTMLDivElement | null>;
   isDrawer: boolean;
   isGameActive: boolean;
   activeColor: string;
@@ -30,7 +30,7 @@ interface UseCanvasLifecycleReturn {
  */
 export function useCanvasLifecycle({
   canvasRef,
-  containerRef,
+  innerContainerRef,
   isDrawer,
   isGameActive,
   activeColor,
@@ -45,79 +45,17 @@ export function useCanvasLifecycle({
   const canvasReadyRef = useRef(false);
   const lastRoomIdRef = useRef<string | null>(null);
 
-  // Calculate optimal canvas size based on container dimensions
+  // Canvas dimensions match the container exactly
   const calculateCanvasSize = useCallback((): CanvasSize => {
-    if (!containerRef.current) {
-      // Fallback to window size if container not ready
-      const isMobile = window.innerWidth <= 768;
-      const isSmallMobile = window.innerWidth <= 480;
-      return {
-        width: isSmallMobile
-          ? Math.min(window.innerWidth - 32, 320)
-          : isMobile
-            ? Math.min(window.innerWidth - 40, 400)
-            : 800,
-        height: isSmallMobile ? 240 : isMobile ? 300 : 600,
-      };
-    }
-
-    const container = containerRef.current;
-    const containerRect = container.getBoundingClientRect();
-
-    // Get actual container dimensions (handle zero/negative values)
-    const containerWidth = Math.max(containerRect.width, 0);
-    const containerHeight = Math.max(containerRect.height, 0);
-
-    if (containerWidth === 0 || containerHeight === 0) {
-      // Fallback if container not measured yet
-      const isMobile = window.innerWidth <= 768;
-      return {
-        width: isMobile ? Math.min(window.innerWidth - 40, 400) : 800,
-        height: isMobile ? 300 : 600,
-      };
-    }
-
-    // The measured container is the drawing panel itself. Leave room only for
-    // panel padding and the non-canvas overlay chrome.
-    const isMobile = containerWidth <= 768;
-    const isSmallMobile = containerWidth <= 480;
-
-    const verticalSpaceForUI = isSmallMobile ? 24 : isMobile ? 28 : 32;
-
-    const horizontalPadding = isSmallMobile ? 16 : isMobile ? 24 : 32;
-
-    const availableWidth = containerWidth - horizontalPadding;
-    const availableHeight = containerHeight - verticalSpaceForUI;
-
-    // Target aspect ratio (4:3 for drawing canvas)
-    const targetAspectRatio = 4 / 3;
-
-    // Calculate dimensions that fit within available space
-    let width = availableWidth;
-    let height = width / targetAspectRatio;
-
-    // If height exceeds available space, scale down based on height
-    if (height > availableHeight) {
-      height = Math.max(availableHeight, 0);
-      width = height * targetAspectRatio;
-    }
-
-    // Ensure minimum sizes (smaller for mobile)
-    const minWidth = isSmallMobile ? 250 : isMobile ? 280 : 300;
-    const minHeight = isSmallMobile ? 188 : isMobile ? 210 : 225;
-
-    width = Math.max(width, minWidth);
-    height = Math.max(height, minHeight);
-
-    // Ensure we don't exceed available space
-    width = Math.min(width, availableWidth);
-    height = Math.min(height, availableHeight);
-
+    const el = innerContainerRef.current;
+    if (!el) return { width: 800, height: 600 };
+    const w = el.clientWidth;
+    const h = el.clientHeight;
     return {
-      width: Math.floor(width),
-      height: Math.floor(height),
+      width: Math.max(Math.floor(w), 1),
+      height: Math.max(Math.floor(h), 1),
     };
-  }, [isDrawer, containerRef]);
+  }, []);
 
   // Helper function to check if canvas is valid and not disposed
   const isCanvasValid = useCallback((canvas: FabricCanvas | null): canvas is FabricCanvas => {
@@ -146,23 +84,27 @@ export function useCanvasLifecycle({
     canvasReadyRef.current = false;
 
     const { width, height } = calculateCanvasSize();
+    const dpr = window.devicePixelRatio || 1;
 
     const canvas = new FabricCanvas(canvasRef.current, {
-      width,
-      height,
+      width: width * dpr,
+      height: height * dpr,
       backgroundColor: "#ffffff",
       isDrawingMode: false,
       renderOnAddRemove: true,
       skipTargetFind: !isDrawer,
     });
 
+    // Override CSS to fill container at display size; internal buffer stays at width*dpr
+    canvas.lowerCanvasEl.style.width = `${width}px`;
+    canvas.lowerCanvasEl.style.height = `${height}px`;
+    canvas.upperCanvasEl.style.width = `${width}px`;
+    canvas.upperCanvasEl.style.height = `${height}px`;
+
     canvas.freeDrawingBrush = new PencilBrush(canvas);
     canvas.freeDrawingBrush.color = activeColor;
     canvas.freeDrawingBrush.width = activeTool === "erase" ? brushSize * 2 : brushSize;
 
-    // Set brush opacity (Fabric.js uses shadowBlur and shadowColor for soft edges)
-    // For opacity, we'll need to handle it in the drawing context
-    // For hardness, we use shadowBlur (0 = hard, higher = soft)
     if (activeTool !== "erase") {
       const shadowBlur = brushHardness < 1 ? (1 - brushHardness) * brushSize * 2 : 0;
       (canvas.freeDrawingBrush as any).shadow = {
@@ -175,7 +117,6 @@ export function useCanvasLifecycle({
 
     canvas.isDrawingMode = isGameActive && isDrawer;
 
-    // Disable all interactions for guessers
     if (!isDrawer) {
       canvas.selection = false;
       canvas.defaultCursor = "default";
@@ -185,6 +126,9 @@ export function useCanvasLifecycle({
     }
 
     setFabricCanvas(canvas);
+
+    // Store DPR for resize handling
+    let currentDpr = dpr;
 
     // Verify it's ready - Fabric.js should have lowerCanvasEl ready immediately
     // but we'll check in the next frame to be safe
@@ -214,40 +158,53 @@ export function useCanvasLifecycle({
       }
     });
 
-    // Debounce resize handler to prevent excessive resizing
-    let resizeTimeout: NodeJS.Timeout | null = null;
+    let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
     const handleResize = () => {
-      if (resizeTimeout) {
-        clearTimeout(resizeTimeout);
-      }
+      if (resizeTimeout) clearTimeout(resizeTimeout);
       resizeTimeout = setTimeout(() => {
-        if (isCanvasValid(canvas)) {
-          const { width, height } = calculateCanvasSize();
-          // Only resize if dimensions actually changed (avoid unnecessary renders)
-          if (canvas.width !== width || canvas.height !== height) {
-            canvas.setWidth(width);
-            canvas.setHeight(height);
-            canvas.renderAll();
+        if (!isCanvasValid(canvas)) return;
+        const { width, height } = calculateCanvasSize();
+        const dpr = window.devicePixelRatio || 1;
+        const targetInternalW = width * dpr;
+        const targetInternalH = height * dpr;
+        if (canvas.width !== targetInternalW || canvas.height !== targetInternalH) {
+          // If DPR changed, scale objects to preserve visual size
+          if (currentDpr !== dpr) {
+            const scale = dpr / Math.max(currentDpr, 1);
+            canvas.getObjects().forEach((obj: any) => {
+              if (typeof obj.left === 'number') obj.left *= scale;
+              if (typeof obj.top === 'number') obj.top *= scale;
+            });
+            currentDpr = dpr;
           }
+          canvas.setWidth(targetInternalW);
+          canvas.setHeight(targetInternalH);
+          canvas.lowerCanvasEl.style.width = `${width}px`;
+          canvas.lowerCanvasEl.style.height = `${height}px`;
+          canvas.upperCanvasEl.style.width = `${width}px`;
+          canvas.upperCanvasEl.style.height = `${height}px`;
+          canvas.renderAll();
         }
-      }, 150); // Debounce resize events
+      }, 150);
     };
 
-    // ResizeObserver for container size changes
     const resizeObserver = new ResizeObserver(handleResize);
 
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
+    if (innerContainerRef.current) {
+      resizeObserver.observe(innerContainerRef.current);
     }
 
-    // Initial resize after delay (give container time to measure)
     const initialResizeTimeout = setTimeout(() => {
-      if (isCanvasValid(canvas)) {
-        const { width, height } = calculateCanvasSize();
-        canvas.setWidth(width);
-        canvas.setHeight(height);
-        canvas.renderAll();
-      }
+      if (!isCanvasValid(canvas)) return;
+      const { width: w, height: h } = calculateCanvasSize();
+      const dpr = currentDpr;
+      canvas.setWidth(w * dpr);
+      canvas.setHeight(h * dpr);
+      canvas.lowerCanvasEl.style.width = `${w}px`;
+      canvas.lowerCanvasEl.style.height = `${h}px`;
+      canvas.upperCanvasEl.style.width = `${w}px`;
+      canvas.upperCanvasEl.style.height = `${h}px`;
+      canvas.renderAll();
     }, 200);
 
     // Window resize fallback (with debouncing)
@@ -255,14 +212,17 @@ export function useCanvasLifecycle({
 
     // Also listen for orientation changes on mobile
     const handleOrientationChange = () => {
-      // Wait for orientation change to complete
       setTimeout(() => {
-        if (isCanvasValid(canvas)) {
-          const { width, height } = calculateCanvasSize();
-          canvas.setWidth(width);
-          canvas.setHeight(height);
-          canvas.renderAll();
-        }
+        if (!isCanvasValid(canvas)) return;
+        const { width: w, height: h } = calculateCanvasSize();
+        const dpr = currentDpr;
+        canvas.setWidth(w * dpr);
+        canvas.setHeight(h * dpr);
+        canvas.lowerCanvasEl.style.width = `${w}px`;
+        canvas.lowerCanvasEl.style.height = `${h}px`;
+        canvas.upperCanvasEl.style.width = `${w}px`;
+        canvas.upperCanvasEl.style.height = `${h}px`;
+        canvas.renderAll();
       }, 300);
     };
 
@@ -289,7 +249,7 @@ export function useCanvasLifecycle({
         console.debug("[CanvasLifecycle] Error disposing canvas:", error);
       }
     };
-  }, [canvasRef, containerRef, roomId, calculateCanvasSize, isCanvasValid]);
+  }, [canvasRef, roomId, calculateCanvasSize, isCanvasValid]);
   // Canvas is now long-lived — initialized once per game (roomId change).
   // isDrawer and isGameActive toggles are handled below without recreation.
 

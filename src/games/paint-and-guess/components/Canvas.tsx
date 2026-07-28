@@ -36,6 +36,7 @@ const loadPreferences = () => {
 export const Canvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const innerContainerRef = useRef<HTMLDivElement>(null);
   const [preferences] = useState(loadPreferences);
   const [activeColor, setActiveColor] = useState(preferences.color);
   const [brushSize, setBrushSize] = useState(preferences.size);
@@ -73,7 +74,7 @@ export const Canvas = () => {
 
   const { fabricCanvas, isCanvasValid } = useCanvasLifecycle({
     canvasRef,
-    containerRef,
+    innerContainerRef,
     isDrawer,
     isGameActive,
     activeColor,
@@ -195,8 +196,8 @@ export const Canvas = () => {
         ref={containerRef}
         className="min-h-0 flex-1 overflow-hidden rounded-lg border border-[#E6EAF2] bg-white p-2 lg:p-3 shadow-[0_16px_38px_rgba(16,32,74,0.08)]"
       >
-        <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-[#D9CCFF] bg-white">
-          <canvas ref={canvasRef} className="max-h-full max-w-full" style={{ display: showOverlay ? "none" : "block" }} />
+        <div ref={innerContainerRef} className="relative flex h-full w-full overflow-hidden rounded-lg border-2 border-dashed border-[#D9CCFF] bg-white">
+          <canvas ref={canvasRef} className="absolute inset-0" style={{ display: showOverlay ? "none" : "block" }} />
 
           {showOverlay && (
             <div className="absolute inset-0 flex items-center justify-center bg-white">

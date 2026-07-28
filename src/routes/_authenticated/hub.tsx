@@ -52,8 +52,8 @@ function HubLayout() {
   const setSearch = useHubStore((state) => state.setSearch);
   const { avatarConfig } = useProfileStore();
   return (
-    <SidebarProvider className="min-h-screen bg-[#FBFDFF] text-[#10204A]" style={primkeetHubTheme}>
-      <div className="flex min-h-screen w-full bg-[#FBFDFF] text-[#10204A]">
+    <SidebarProvider className="h-dvh overflow-hidden bg-[#FBFDFF] text-[#10204A]" style={primkeetHubTheme}>
+      <div className="flex h-dvh w-full overflow-hidden bg-[#FBFDFF] text-[#10204A]">
         <div className="md:hidden">
           <AppSidebar />
         </div>
@@ -120,7 +120,7 @@ function HubLayout() {
               <AvatarPreview config={avatarConfig} size={40} />
             </Link>
           </header>
-          <main className="flex-1">
+          <main className="min-h-0 flex-1 overflow-y-auto">
             <Outlet />
           </main>
         </SidebarInset>

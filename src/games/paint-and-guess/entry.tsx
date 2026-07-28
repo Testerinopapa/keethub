@@ -12,13 +12,16 @@ function PaintAndGuessApp() {
   const handleBack = useCallback(() => setInRoom(false), []);
 
   if (!inRoom) {
-    return <Lobby onEnterRoom={handleEnterRoom} />;
+    return (
+      <div className="h-full overflow-y-auto bg-[#FBFDFF]">
+        <Lobby onEnterRoom={handleEnterRoom} />
+      </div>
+    );
   }
 
-  // Room is loading its state via RPC — show a waiting card
   if (!gameState.roomId) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex h-full items-center justify-center bg-[#FBFDFF]">
         <Card className="p-6 text-center">
           <p className="text-lg font-semibold">Joining room...</p>
           <p className="text-sm text-muted-foreground mt-1">
@@ -34,8 +37,10 @@ function PaintAndGuessApp() {
 
 export default function PaintAndGuessEntry() {
   return (
-    <GameProvider>
-      <PaintAndGuessApp />
-    </GameProvider>
+    <div className="h-full overflow-hidden">
+      <GameProvider>
+        <PaintAndGuessApp />
+      </GameProvider>
+    </div>
   );
 }

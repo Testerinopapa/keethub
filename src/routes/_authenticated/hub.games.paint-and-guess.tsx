@@ -12,7 +12,7 @@ export const Route = createFileRoute(
   component: () => (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">
+        <div className="flex h-full items-center justify-center text-muted-foreground">
           Loading Paint &amp; Guess...
         </div>
       }

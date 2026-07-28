@@ -6,6 +6,7 @@ import { useGameFocusStore } from "@/stores/game-focus.store";
 
 function ScribbleBattleApp() {
   const [inRoom, setInRoom] = useState(false);
+  const { gameState } = useSBGame();
   const setGameFocus = useGameFocusStore((state) => state.setActive);
 
   const handleEnterRoom = useCallback(() => setInRoom(true), []);
@@ -24,8 +25,7 @@ function ScribbleBattleApp() {
     );
   }
 
-  // Route to room when joined
-  return <Room key={Date.now()} onBack={handleBack} />;
+  return <Room key={gameState.roomId ?? "joining"} onBack={handleBack} />;
 }
 
 export default function ScribbleBattleEntry() {

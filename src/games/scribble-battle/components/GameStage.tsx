@@ -1,4 +1,4 @@
-import { useSBGame } from "@/games/scribble-battle";
+import { useSBGame } from "@/games/scribble-battle/state/GameContext";
 import { TeamChat } from "@/games/scribble-battle/components/TeamChat";
 import { TeamCanvas } from "@/games/scribble-battle/components/TeamCanvas";
 import { Card } from "@/components/ui/card";

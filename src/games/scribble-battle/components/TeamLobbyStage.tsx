@@ -1,4 +1,4 @@
-import { useSBGame } from "@/games/scribble-battle";
+import { useSBGame } from "@/games/scribble-battle/state/GameContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

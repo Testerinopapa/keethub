@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { AvatarPreview } from "@/components/avatar/AvatarPreview";
 import { useHubStore } from "@/stores/hub-store";
 import { useProfileStore } from "@/stores/profile-store";
+import { useGameFocusStore } from "@/stores/game-focus.store";
 
 export const Route = createFileRoute("/_authenticated/hub")({
   component: HubLayout,
@@ -51,6 +52,7 @@ function HubLayout() {
   const search = useHubStore((state) => state.search);
   const setSearch = useHubStore((state) => state.setSearch);
   const { avatarConfig } = useProfileStore();
+  const gameFocus = useGameFocusStore((state) => state.isActive);
   return (
     <SidebarProvider className="h-dvh overflow-hidden bg-[#FBFDFF] text-[#10204A]" style={primkeetHubTheme}>
       <div className="flex h-dvh w-full overflow-hidden bg-[#FBFDFF] text-[#10204A]">
@@ -58,69 +60,71 @@ function HubLayout() {
           <AppSidebar />
         </div>
         <SidebarInset className="flex flex-1 flex-col bg-[#FBFDFF]">
-          <header className="sticky top-0 z-40 flex min-h-[88px] shrink-0 items-center gap-4 border-b border-[#E8ECF4] bg-white/92 px-5 backdrop-blur md:px-12">
-            <SidebarTrigger className="h-10 w-10 rounded-full border border-[#E8ECF4] bg-white text-[#10204A] shadow-sm hover:bg-[#ECFBFA] hover:text-[#08AAA7] md:hidden" />
-            <Link
-              to="/hub"
-              className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#08AAA7] focus-visible:ring-offset-2"
-            >
-              <img
-                src="/primkeet-logo.png"
-                alt="PrimKeet"
-                width={176}
-                height={60}
-                className="h-10 w-auto object-contain"
-              />
-            </Link>
-            <nav className="hidden items-center gap-2 md:flex" aria-label="Primary navigation">
+          {!gameFocus && (
+            <header className="sticky top-0 z-40 flex min-h-[88px] shrink-0 items-center gap-4 border-b border-[#E8ECF4] bg-white/92 px-5 backdrop-blur md:px-12">
+              <SidebarTrigger className="h-10 w-10 rounded-full border border-[#E8ECF4] bg-white text-[#10204A] shadow-sm hover:bg-[#ECFBFA] hover:text-[#08AAA7] md:hidden" />
               <Link
                 to="/hub"
-                activeOptions={{ exact: true }}
-                activeProps={{ className: "rounded-full bg-[#FFF0F6] px-5 py-2.5 text-sm font-extrabold text-[#FF3B8D]" }}
-                inactiveProps={{ className: "rounded-full px-4 py-2.5 text-sm font-extrabold text-[#52617E] transition hover:bg-[#F6F8FC]" }}
+                className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#08AAA7] focus-visible:ring-offset-2"
               >
-                Library
+                <img
+                  src="/primkeet-logo.png"
+                  alt="PrimKeet"
+                  width={176}
+                  height={60}
+                  className="h-10 w-auto object-contain"
+                />
               </Link>
-              <Link
-                to="/hub/academy"
-                activeProps={{ className: "rounded-full bg-[#FFF0F6] px-5 py-2.5 text-sm font-extrabold text-[#FF3B8D]" }}
-                inactiveProps={{ className: "rounded-full px-4 py-2.5 text-sm font-extrabold text-[#52617E] transition hover:bg-[#F6F8FC]" }}
-              >
-                Academy
-              </Link>
-              <Link
-                to="/hub/leaderboard"
-                activeProps={{ className: "rounded-full bg-[#FFF0F6] px-5 py-2.5 text-sm font-extrabold text-[#FF3B8D]" }}
-                inactiveProps={{ className: "rounded-full px-4 py-2.5 text-sm font-extrabold text-[#52617E] transition hover:bg-[#F6F8FC]" }}
-              >
-                Leaderboard
-              </Link>
+              <nav className="hidden items-center gap-2 md:flex" aria-label="Primary navigation">
+                <Link
+                  to="/hub"
+                  activeOptions={{ exact: true }}
+                  activeProps={{ className: "rounded-full bg-[#FFF0F6] px-5 py-2.5 text-sm font-extrabold text-[#FF3B8D]" }}
+                  inactiveProps={{ className: "rounded-full px-4 py-2.5 text-sm font-extrabold text-[#52617E] transition hover:bg-[#F6F8FC]" }}
+                >
+                  Library
+                </Link>
+                <Link
+                  to="/hub/academy"
+                  activeProps={{ className: "rounded-full bg-[#FFF0F6] px-5 py-2.5 text-sm font-extrabold text-[#FF3B8D]" }}
+                  inactiveProps={{ className: "rounded-full px-4 py-2.5 text-sm font-extrabold text-[#52617E] transition hover:bg-[#F6F8FC]" }}
+                >
+                  Academy
+                </Link>
+                <Link
+                  to="/hub/leaderboard"
+                  activeProps={{ className: "rounded-full bg-[#FFF0F6] px-5 py-2.5 text-sm font-extrabold text-[#FF3B8D]" }}
+                  inactiveProps={{ className: "rounded-full px-4 py-2.5 text-sm font-extrabold text-[#52617E] transition hover:bg-[#F6F8FC]" }}
+                >
+                  Leaderboard
+                </Link>
+                <Link
+                  to="/hub/profile"
+                  activeProps={{ className: "rounded-full bg-[#FFF0F6] px-5 py-2.5 text-sm font-extrabold text-[#FF3B8D]" }}
+                  inactiveProps={{ className: "rounded-full px-4 py-2.5 text-sm font-extrabold text-[#52617E] transition hover:bg-[#F6F8FC]" }}
+                >
+                  Profile
+                </Link>
+              </nav>
+              <div className="relative ml-auto hidden w-full max-w-[300px] xl:block">
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#8190AA]" />
+                <Input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search games"
+                  className="h-12 rounded-full border-[#D7DEEA] bg-white pl-12 font-semibold text-[#10204A] shadow-none focus-visible:ring-[#08AAA7]"
+                />
+              </div>
               <Link
                 to="/hub/profile"
-                activeProps={{ className: "rounded-full bg-[#FFF0F6] px-5 py-2.5 text-sm font-extrabold text-[#FF3B8D]" }}
-                inactiveProps={{ className: "rounded-full px-4 py-2.5 text-sm font-extrabold text-[#52617E] transition hover:bg-[#F6F8FC]" }}
+                aria-label="Profile"
+                className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-[#E8F8F6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#08AAA7] focus-visible:ring-offset-2"
               >
-                Profile
+                <AvatarPreview config={avatarConfig} size={40} />
               </Link>
-            </nav>
-            <div className="relative ml-auto hidden w-full max-w-[300px] xl:block">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#8190AA]" />
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search games"
-                className="h-12 rounded-full border-[#D7DEEA] bg-white pl-12 font-semibold text-[#10204A] shadow-none focus-visible:ring-[#08AAA7]"
-              />
-            </div>
-            <Link
-              to="/hub/profile"
-              aria-label="Profile"
-              className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-[#E8F8F6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#08AAA7] focus-visible:ring-offset-2"
-            >
-              <AvatarPreview config={avatarConfig} size={40} />
-            </Link>
-          </header>
-          <main className="min-h-0 flex-1 overflow-y-auto">
+            </header>
+          )}
+          <main className={gameFocus ? "flex-1 overflow-hidden" : "min-h-0 flex-1 overflow-y-auto"}>
             <Outlet />
           </main>
         </SidebarInset>

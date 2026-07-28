@@ -272,6 +272,143 @@ export type Database = {
           },
         ]
       }
+      chess_moves: {
+        Row: {
+          created_at: string
+          fen: string
+          id: string
+          move_number: number
+          player_id: string
+          room_id: string
+          san: string
+          uci: string
+        }
+        Insert: {
+          created_at?: string
+          fen: string
+          id?: string
+          move_number: number
+          player_id: string
+          room_id: string
+          san: string
+          uci: string
+        }
+        Update: {
+          created_at?: string
+          fen?: string
+          id?: string
+          move_number?: number
+          player_id?: string
+          room_id?: string
+          san?: string
+          uci?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chess_moves_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "chess_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chess_moves_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "chess_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chess_players: {
+        Row: {
+          avatar: Json | null
+          color: string
+          id: string
+          is_connected: boolean
+          joined_at: string
+          name: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          avatar?: Json | null
+          color: string
+          id?: string
+          is_connected?: boolean
+          joined_at?: string
+          name: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          avatar?: Json | null
+          color?: string
+          id?: string
+          is_connected?: boolean
+          joined_at?: string
+          name?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chess_players_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "chess_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chess_rooms: {
+        Row: {
+          black_id: string | null
+          created_at: string
+          current_fen: string
+          id: string
+          last_activity_at: string
+          name: string
+          owner_id: string
+          pgn: string
+          result: string | null
+          room_code: string
+          status: string
+          updated_at: string
+          white_id: string | null
+        }
+        Insert: {
+          black_id?: string | null
+          created_at?: string
+          current_fen?: string
+          id?: string
+          last_activity_at?: string
+          name: string
+          owner_id: string
+          pgn?: string
+          result?: string | null
+          room_code: string
+          status?: string
+          updated_at?: string
+          white_id?: string | null
+        }
+        Update: {
+          black_id?: string | null
+          created_at?: string
+          current_fen?: string
+          id?: string
+          last_activity_at?: string
+          name?: string
+          owner_id?: string
+          pgn?: string
+          result?: string | null
+          room_code?: string
+          status?: string
+          updated_at?: string
+          white_id?: string | null
+        }
+        Relationships: []
+      }
       game_canvas_checkpoints: {
         Row: {
           created_at: string
@@ -617,6 +754,448 @@ export type Database = {
         }
         Relationships: []
       }
+      scribble_battle_checkpoints: {
+        Row: {
+          created_at: string
+          fabric_json: Json
+          id: string
+          room_id: string
+          round_number: number
+          team: number
+        }
+        Insert: {
+          created_at?: string
+          fabric_json: Json
+          id?: string
+          room_id: string
+          round_number: number
+          team: number
+        }
+        Update: {
+          created_at?: string
+          fabric_json?: Json
+          id?: string
+          room_id?: string
+          round_number?: number
+          team?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scribble_battle_checkpoints_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "scribble_battle_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scribble_battle_players: {
+        Row: {
+          avatar: Json | null
+          created_at: string
+          has_guessed: boolean
+          id: string
+          is_connected: boolean
+          is_ready: boolean
+          name: string
+          room_id: string
+          score: number
+          team: number
+          user_id: string | null
+          win_streak: number
+        }
+        Insert: {
+          avatar?: Json | null
+          created_at?: string
+          has_guessed?: boolean
+          id?: string
+          is_connected?: boolean
+          is_ready?: boolean
+          name: string
+          room_id: string
+          score?: number
+          team: number
+          user_id?: string | null
+          win_streak?: number
+        }
+        Update: {
+          avatar?: Json | null
+          created_at?: string
+          has_guessed?: boolean
+          id?: string
+          is_connected?: boolean
+          is_ready?: boolean
+          name?: string
+          room_id?: string
+          score?: number
+          team?: number
+          user_id?: string | null
+          win_streak?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scribble_battle_players_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "scribble_battle_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scribble_battle_rooms: {
+        Row: {
+          created_at: string
+          game_pin: string
+          id: string
+          is_game_active: boolean
+          last_activity_at: string
+          max_regular_rounds: number
+          name: string
+          owner_id: string | null
+          phase: string
+          round_deadline_at: string | null
+          round_number: number
+          round_time: number
+          team1_drawer_id: string | null
+          team1_final_progress: number
+          team1_score: number
+          team2_drawer_id: string | null
+          team2_final_progress: number
+          team2_score: number
+          updated_at: string
+          word_history: string[] | null
+          word_pack: string | null
+        }
+        Insert: {
+          created_at?: string
+          game_pin: string
+          id?: string
+          is_game_active?: boolean
+          last_activity_at?: string
+          max_regular_rounds?: number
+          name: string
+          owner_id?: string | null
+          phase?: string
+          round_deadline_at?: string | null
+          round_number?: number
+          round_time?: number
+          team1_drawer_id?: string | null
+          team1_final_progress?: number
+          team1_score?: number
+          team2_drawer_id?: string | null
+          team2_final_progress?: number
+          team2_score?: number
+          updated_at?: string
+          word_history?: string[] | null
+          word_pack?: string | null
+        }
+        Update: {
+          created_at?: string
+          game_pin?: string
+          id?: string
+          is_game_active?: boolean
+          last_activity_at?: string
+          max_regular_rounds?: number
+          name?: string
+          owner_id?: string | null
+          phase?: string
+          round_deadline_at?: string | null
+          round_number?: number
+          round_time?: number
+          team1_drawer_id?: string | null
+          team1_final_progress?: number
+          team1_score?: number
+          team2_drawer_id?: string | null
+          team2_final_progress?: number
+          team2_score?: number
+          updated_at?: string
+          word_history?: string[] | null
+          word_pack?: string | null
+        }
+        Relationships: []
+      }
+      scribble_battle_round_secrets: {
+        Row: {
+          created_at: string
+          id: string
+          room_id: string
+          round_number: number
+          word: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          room_id: string
+          round_number: number
+          word: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          room_id?: string
+          round_number?: number
+          word?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scribble_battle_round_secrets_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "scribble_battle_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scribble_battle_rounds: {
+        Row: {
+          correct_guesser_id: string | null
+          created_at: string
+          duration_ms: number
+          finished_by: string
+          id: string
+          phase: string
+          room_id: string
+          round_number: number
+          team1_drawer_id: string
+          team2_drawer_id: string
+          winning_team: number | null
+          word: string
+        }
+        Insert: {
+          correct_guesser_id?: string | null
+          created_at?: string
+          duration_ms: number
+          finished_by?: string
+          id?: string
+          phase: string
+          room_id: string
+          round_number: number
+          team1_drawer_id: string
+          team2_drawer_id: string
+          winning_team?: number | null
+          word: string
+        }
+        Update: {
+          correct_guesser_id?: string | null
+          created_at?: string
+          duration_ms?: number
+          finished_by?: string
+          id?: string
+          phase?: string
+          room_id?: string
+          round_number?: number
+          team1_drawer_id?: string
+          team2_drawer_id?: string
+          winning_team?: number | null
+          word?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scribble_battle_rounds_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "scribble_battle_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trivia_answers: {
+        Row: {
+          created_at: string
+          id: string
+          is_correct: boolean
+          player_id: string
+          points: number
+          question_id: string
+          room_id: string
+          round_number: number
+          selected_option_id: string | null
+          time_ms: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_correct?: boolean
+          player_id: string
+          points?: number
+          question_id: string
+          room_id: string
+          round_number: number
+          selected_option_id?: string | null
+          time_ms?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_correct?: boolean
+          player_id?: string
+          points?: number
+          question_id?: string
+          room_id?: string
+          round_number?: number
+          selected_option_id?: string | null
+          time_ms?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trivia_answers_player_fk"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "trivia_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trivia_answers_question_fk"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "trivia_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trivia_answers_room_fk"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "trivia_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trivia_players: {
+        Row: {
+          avatar: Json | null
+          id: string
+          is_connected: boolean
+          is_ready: boolean
+          joined_at: string
+          name: string
+          room_id: string
+          score: number
+          streak: number
+          user_id: string
+        }
+        Insert: {
+          avatar?: Json | null
+          id?: string
+          is_connected?: boolean
+          is_ready?: boolean
+          joined_at?: string
+          name: string
+          room_id: string
+          score?: number
+          streak?: number
+          user_id: string
+        }
+        Update: {
+          avatar?: Json | null
+          id?: string
+          is_connected?: boolean
+          is_ready?: boolean
+          joined_at?: string
+          name?: string
+          room_id?: string
+          score?: number
+          streak?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trivia_players_room_fk"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "trivia_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trivia_questions: {
+        Row: {
+          correct_option_id: string
+          id: string
+          options: Json
+          question_text: string
+          quiz_id: string
+          time_limit: number
+        }
+        Insert: {
+          correct_option_id: string
+          id?: string
+          options: Json
+          question_text: string
+          quiz_id: string
+          time_limit?: number
+        }
+        Update: {
+          correct_option_id?: string
+          id?: string
+          options?: Json
+          question_text?: string
+          quiz_id?: string
+          time_limit?: number
+        }
+        Relationships: []
+      }
+      trivia_rooms: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          current_question_id: string | null
+          id: string
+          last_activity_at: string
+          max_players: number
+          max_rounds: number
+          name: string
+          owner_id: string
+          phase: string
+          room_code: string
+          round_deadline_at: string | null
+          round_number: number
+          updated_at: string
+          used_question_ids: string[]
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          current_question_id?: string | null
+          id?: string
+          last_activity_at?: string
+          max_players?: number
+          max_rounds?: number
+          name: string
+          owner_id: string
+          phase?: string
+          room_code: string
+          round_deadline_at?: string | null
+          round_number?: number
+          updated_at?: string
+          used_question_ids?: string[]
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          current_question_id?: string | null
+          id?: string
+          last_activity_at?: string
+          max_players?: number
+          max_rounds?: number
+          name?: string
+          owner_id?: string
+          phase?: string
+          room_code?: string
+          round_deadline_at?: string | null
+          round_number?: number
+          updated_at?: string
+          used_question_ids?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trivia_rooms_question_fk"
+            columns: ["current_question_id"]
+            isOneToOne: false
+            referencedRelation: "trivia_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -640,11 +1219,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      advance_paint_round: { Args: { room_id: string }; Returns: Json }
+      advance_paint_round: { Args: { p_room_id: string }; Returns: Json }
+      advance_sb_final_word: {
+        Args: { p_room_id: string; p_team: number }
+        Returns: Json
+      }
+      advance_sb_round: { Args: { p_room_id: string }; Returns: Json }
+      advance_trivia_question: { Args: { p_room_id: string }; Returns: Json }
       all_guessers_finished: { Args: { room_id: string }; Returns: boolean }
       choose_balderdash_deck: {
         Args: { p_deck: string; p_room_id: string }
         Returns: Json
+      }
+      compute_trivia_points: {
+        Args: { p_streak: number; p_time_left: number; p_time_limit: number }
+        Returns: number
       }
       create_balderdash_room: {
         Args: {
@@ -654,6 +1243,7 @@ export type Database = {
         }
         Returns: Json
       }
+      create_chess_room: { Args: { p_room_name?: string }; Returns: Json }
       create_paint_room: {
         Args: {
           max_players?: number
@@ -664,15 +1254,51 @@ export type Database = {
         }
         Returns: Json
       }
+      create_scribble_battle_room: {
+        Args: {
+          max_regular_rounds?: number
+          room_name: string
+          round_time?: number
+          word_pack?: string
+        }
+        Returns: Json
+      }
+      create_trivia_room: {
+        Args: { p_max_rounds?: number; p_room_name?: string }
+        Returns: Json
+      }
+      finish_chess_game: {
+        Args: { p_result: string; p_room_id: string }
+        Returns: Json
+      }
       generate_balderdash_code: { Args: never; Returns: string }
+      generate_chess_code: { Args: never; Returns: string }
       generate_game_pin: { Args: never; Returns: string }
+      generate_trivia_code: { Args: never; Returns: string }
       get_balderdash_room_state: { Args: { p_room_id: string }; Returns: Json }
       get_canvas_checkpoint: {
         Args: { room_id: string; round_number: number }
         Returns: Json
       }
+      get_chess_room_state: { Args: { p_room_id: string }; Returns: Json }
+      get_leaderboard_standings: {
+        Args: { p_days?: number; p_limit?: number }
+        Returns: {
+          avatar_config: Json
+          best_game_slug: string
+          best_game_title: string
+          best_score: number
+          last_played_at: string
+          submissions: number
+          total_score: number
+          user_id: string
+          username: string
+        }[]
+      }
       get_paint_room_state: { Args: { room_id: string }; Returns: Json }
       get_random_word: { Args: { pack: string }; Returns: string }
+      get_sb_room_state: { Args: { room_id: string }; Returns: Json }
+      get_trivia_room_state: { Args: { p_room_id: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -681,12 +1307,35 @@ export type Database = {
         Returns: boolean
       }
       join_balderdash_room: { Args: { p_room_code: string }; Returns: Json }
-      join_paint_room: { Args: { game_pin: string }; Returns: Json }
+      join_chess_room: { Args: { p_room_code: string }; Returns: Json }
+      join_paint_room: { Args: { p_game_pin: string }; Returns: Json }
+      join_scribble_battle_room: {
+        Args: { p_game_pin: string; p_team?: number }
+        Returns: Json
+      }
+      join_trivia_room: { Args: { p_room_code: string }; Returns: Json }
       leave_balderdash_room: { Args: { p_room_id: string }; Returns: Json }
-      leave_paint_room: { Args: { room_id: string }; Returns: Json }
+      leave_chess_room: { Args: { p_room_id: string }; Returns: Json }
+      leave_paint_room: { Args: { p_room_id: string }; Returns: Json }
+      leave_scribble_battle_room: { Args: { p_room_id: string }; Returns: Json }
+      leave_trivia_room: { Args: { p_room_id: string }; Returns: Json }
+      make_chess_move: {
+        Args: {
+          p_move_san: string
+          p_move_uci: string
+          p_result_fen: string
+          p_room_id: string
+        }
+        Returns: Json
+      }
       next_balderdash_round: { Args: { p_room_id: string }; Returns: Json }
       save_canvas_checkpoint: {
         Args: { fabric_json: Json; room_id: string; round_number: number }
+        Returns: Json
+      }
+      sb_round_resolved: { Args: { p_room_id: string }; Returns: boolean }
+      select_trivia_category: {
+        Args: { p_category_id: string; p_room_id: string }
         Returns: Json
       }
       set_balderdash_ready: {
@@ -697,14 +1346,42 @@ export type Database = {
         Args: { is_ready: boolean; room_id: string }
         Returns: Json
       }
+      set_sb_player_ready: {
+        Args: { is_ready: boolean; room_id: string }
+        Returns: Json
+      }
+      set_trivia_ready: {
+        Args: { p_is_ready: boolean; p_room_id: string }
+        Returns: Json
+      }
       start_balderdash_room: { Args: { p_room_id: string }; Returns: Json }
-      start_paint_game: { Args: { room_id: string }; Returns: Json }
+      start_chess_game: { Args: { p_room_id: string }; Returns: Json }
+      start_paint_game: { Args: { p_room_id: string }; Returns: Json }
+      start_scribble_battle: { Args: { p_room_id: string }; Returns: Json }
+      start_trivia_game: { Args: { p_room_id: string }; Returns: Json }
       submit_balderdash_answer: {
         Args: { p_answer: string; p_room_id: string }
         Returns: Json
       }
       submit_paint_guess: {
-        Args: { guess: string; room_id: string }
+        Args: { p_guess: string; p_room_id: string }
+        Returns: Json
+      }
+      submit_sb_guess: {
+        Args: { p_guess: string; p_room_id: string }
+        Returns: Json
+      }
+      submit_trivia_answer: {
+        Args: {
+          p_question_id: string
+          p_room_id: string
+          p_selected_option_id: string
+          p_time_ms: number
+        }
+        Returns: Json
+      }
+      switch_sb_team: {
+        Args: { new_team: number; room_id: string }
         Returns: Json
       }
       vote_balderdash_answer: {

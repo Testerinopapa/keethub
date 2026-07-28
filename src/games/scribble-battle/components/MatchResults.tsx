@@ -1,4 +1,4 @@
-import { useSBGame } from "@/games/scribble-battle";
+import { useSBGame } from "@/games/scribble-battle/state/GameContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trophy } from "lucide-react";

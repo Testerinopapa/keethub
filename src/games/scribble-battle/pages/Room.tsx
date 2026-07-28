@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useSBGame } from "@/games/scribble-battle";
+import { useSBGame } from "@/games/scribble-battle/state/GameContext";
 import { GameHeader } from "@/games/scribble-battle/components/GameHeader";
 import { TeamLobbyStage } from "@/games/scribble-battle/components/TeamLobbyStage";
 import { GameStage } from "@/games/scribble-battle/components/GameStage";

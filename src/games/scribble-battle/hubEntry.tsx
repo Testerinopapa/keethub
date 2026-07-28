@@ -27,7 +27,7 @@ export function getScribbleBattlePreviewEntry(): NormalizedGameEntry {
     featureFlags: [],
     plugin: {
       previewComponent: "scribbleBattlePreview",
-      moduleId: "@/games/scribble-battle",
+      moduleId: "@/games/scribble-battle/state/GameContext",
     },
   };
 }

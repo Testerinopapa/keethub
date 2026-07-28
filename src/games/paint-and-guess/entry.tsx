@@ -1,15 +1,22 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { GameProvider, useGame } from "./state/GameContext";
 import Lobby from "./pages/Lobby";
 import Room from "./pages/Room";
 import { Card } from "@/components/ui/card";
+import { useGameFocusStore } from "@/stores/game-focus.store";
 
 function PaintAndGuessApp() {
   const [inRoom, setInRoom] = useState(false);
   const { gameState } = useGame();
+  const setGameFocus = useGameFocusStore((state) => state.setActive);
 
   const handleEnterRoom = useCallback(() => setInRoom(true), []);
   const handleBack = useCallback(() => setInRoom(false), []);
+
+  useEffect(() => {
+    setGameFocus(inRoom);
+    return () => setGameFocus(false);
+  }, [inRoom, setGameFocus]);
 
   if (!inRoom) {
     return (

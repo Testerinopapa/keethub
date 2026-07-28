@@ -54,22 +54,22 @@ export function LobbyStage({
   }, [onReadyToggle]);
 
   return (
-    <div className="container mx-auto p-2 sm:p-4 lg:p-6 h-[calc(100vh-5rem)] max-h-screen overflow-y-auto">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 auto-rows-fr">
+    <div className="mx-auto flex h-[calc(100vh-5rem)] max-w-7xl flex-col px-2 py-2 sm:px-4 sm:py-3 lg:px-6 lg:py-4">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-[260px_minmax(0,1fr)_300px] xl:grid-cols-[280px_minmax(0,1fr)_320px]">
         {/* Left Sidebar - Players */}
-        <div className="lg:col-span-1 flex flex-col min-h-[200px] lg:min-h-0 lg:max-h-full">
-          <div className="flex-shrink-0 overflow-y-auto mb-3 sm:mb-4 max-h-[300px] lg:max-h-none">
+        <div className="flex min-h-0 flex-col gap-3">
+          <div className="min-h-0 flex-1 overflow-y-auto">
             <PlayerList />
           </div>
 
           {/* Ready Up Section */}
-          <Card className="flex-shrink-0 mb-3 sm:mb-4">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                <Users className="w-4 h-4 sm:w-5 sm:h-5" />
+          <Card className="flex-shrink-0">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-1.5 text-sm sm:text-base">
+                <Users className="h-4 w-4" />
                 Ready Up
               </CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
+              <CardDescription className="text-xs">
                 {playerCount < 2
                   ? "Waiting for more players..."
                   : allPlayersReady
@@ -77,12 +77,12 @@ export function LobbyStage({
                   : "Get ready to start"}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2 sm:space-y-3">
+            <CardContent className="space-y-2">
               <Button
                 onClick={onReadyToggle}
-                className="w-full text-sm sm:text-base"
+                className="w-full text-sm"
                 variant={isReady ? "secondary" : "default"}
-                size="lg"
+                size="sm"
               >
                 {isReady ? "Not Ready" : "Ready Up"}
               </Button>
@@ -90,18 +90,18 @@ export function LobbyStage({
               {isHost && (
                 <Button
                   onClick={onStartGame}
-                  className="w-full text-sm sm:text-base"
+                  className="w-full text-sm"
                   disabled={!allPlayersReady}
-                  size="lg"
+                  size="sm"
                 >
-                  <Play className="w-4 h-4 mr-2" />
+                  <Play className="mr-1.5 h-3.5 w-3.5" />
                   Start Game
                 </Button>
               )}
 
               {!isHost && (
                 <div className="text-center">
-                  <p className="text-xs sm:text-sm text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     {allPlayersReady
                       ? "Ready! Waiting for host to start."
                       : "Waiting for all players to ready up."}
@@ -113,8 +113,8 @@ export function LobbyStage({
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="outline" className="w-full flex-shrink-0 text-sm sm:text-base">
-                <LogOut className="w-4 h-4 mr-2" />
+              <Button variant="outline" className="w-full flex-shrink-0 text-sm" size="sm">
+                <LogOut className="mr-1.5 h-3.5 w-3.5" />
                 Leave Room
               </Button>
             </AlertDialogTrigger>
@@ -134,45 +134,43 @@ export function LobbyStage({
         </div>
 
         {/* Main Area - Game Info */}
-        <div className="lg:col-span-1 flex flex-col min-h-[250px] lg:min-h-0 lg:max-h-full">
-          <Card className="flex-1 flex flex-col min-h-0">
-            <CardHeader className="flex-shrink-0">
-              <CardTitle className="text-base sm:text-lg">Game Rules</CardTitle>
-              <CardDescription className="text-xs sm:text-sm">How to play</CardDescription>
+        <div className="flex min-h-0 flex-col">
+          <Card className="flex min-h-0 flex-1 flex-col">
+            <CardHeader className="flex-shrink-0 pb-2">
+              <CardTitle className="text-sm sm:text-base">Game Rules</CardTitle>
+              <CardDescription className="text-xs">How to play</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 min-h-0">
-              <div className="space-y-2 sm:space-y-3">
-                <div>
-                  <h3 className="font-semibold mb-1 text-sm sm:text-base">🎨 Drawing Phase</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground">
-                    One player draws while others guess the word. You have 60 seconds per round.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-1 text-sm sm:text-base">💬 Guessing</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground">
-                    Type your guesses in the chat. First correct guess wins points!
-                  </p>
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-1 text-sm sm:text-base">🏆 Scoring</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground">
-                    Correct guesses earn points. The player with the most points at the end wins!
-                  </p>
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-1 text-sm sm:text-base">🔄 Rounds</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground">
-                    Each player gets a turn to draw. The game continues for {maxRounds} rounds.
-                  </p>
-                </div>
+            <CardContent className="min-h-0 flex-1 overflow-y-auto space-y-2 sm:space-y-3">
+              <div>
+                <h3 className="mb-0.5 text-xs font-semibold sm:text-sm">Drawing Phase</h3>
+                <p className="text-xs text-muted-foreground">
+                  One player draws while others guess the word. You have 60 seconds per round.
+                </p>
+              </div>
+              <div>
+                <h3 className="mb-0.5 text-xs font-semibold sm:text-sm">Guessing</h3>
+                <p className="text-xs text-muted-foreground">
+                  Type your guesses in the chat. First correct guess wins points!
+                </p>
+              </div>
+              <div>
+                <h3 className="mb-0.5 text-xs font-semibold sm:text-sm">Scoring</h3>
+                <p className="text-xs text-muted-foreground">
+                  Correct guesses earn points. The player with the most points at the end wins!
+                </p>
+              </div>
+              <div>
+                <h3 className="mb-0.5 text-xs font-semibold sm:text-sm">Rounds</h3>
+                <p className="text-xs text-muted-foreground">
+                  Each player gets a turn to draw. The game continues for {maxRounds} rounds.
+                </p>
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Right Sidebar - Chat */}
-        <div className="lg:col-span-1 flex flex-col min-h-[300px] lg:min-h-0 lg:max-h-full">
+        <div className="flex min-h-0 flex-col">
           <Chat />
         </div>
       </div>

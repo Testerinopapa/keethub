@@ -134,21 +134,6 @@ function createInitialGameState(): SBGameState {
   };
 }
 
-function createChatMessage(
-  player: { id: string; name: string; team: 1 | 2 },
-  message: string,
-  type: SBChatMessage["type"],
-  timestamp = Date.now(),
-): SBChatMessage {
-  return {
-    id: `${timestamp}-${Math.random().toString(36).slice(2)}`,
-    player,
-    message,
-    timestamp,
-    type,
-  };
-}
-
 const SBGameContext = createContext<SBGameContextType | undefined>(undefined);
 
 // ── Provider ──────────────────────────────────────────────────
@@ -192,7 +177,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     const playerList = (data || []).map(mapPlayer);
 
-    // Find selfId if not set
     let foundSelfId: string | null = null;
     let foundTeam: 1 | 2 | null = null;
     if (data?.length) {
@@ -211,8 +195,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       ...prev,
       selfId: prev.selfId || foundSelfId || null,
       team: foundTeam ?? prev.team,
-      team1: playerList.filter((p: SBPlayer) => p.team === 1),
-      team2: playerList.filter((p: SBPlayer) => p.team === 2),
+      team1: playerList.filter((p) => p.team === 1),
+      team2: playerList.filter((p) => p.team === 2),
     }));
   }, []);
 
@@ -224,7 +208,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const sbChan = joinRoomChannel(roomId);
       channelRef.current = sbChan;
 
-      sbChan.onStatusChange((connected) => setIsConnected(connected));
+      sbChan.onStatusChange((connected: boolean) => setIsConnected(connected));
 
       sbChan.subscribe("player-joined", () => fetchRoomPlayers(roomId));
       sbChan.subscribe("player-left", () => fetchRoomPlayers(roomId));
@@ -292,15 +276,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
           ...prev,
           phase: prev.phase === "regular" ? "regular" : "final",
           team1: payload.players
-            ? payload.players.filter((p: any) => p.team === 1).map((p: any) => ({
-                id: p.id, userId: null, name: p.name, team: p.team as 1 | 2,
+            ? (payload.players as any[]).filter((p: any) => p.team === 1).map((p: any) => ({
+                id: p.id, userId: null, name: p.name, team: 1 as const,
                 score: p.score, isReady: false, hasGuessed: false,
                 isConnected: true, winStreak: 0, avatar: p.avatar,
               }))
             : prev.team1,
           team2: payload.players
-            ? payload.players.filter((p: any) => p.team === 2).map((p: any) => ({
-                id: p.id, userId: null, name: p.name, team: p.team as 1 | 2,
+            ? (payload.players as any[]).filter((p: any) => p.team === 2).map((p: any) => ({
+                id: p.id, userId: null, name: p.name, team: 2 as const,
                 score: p.score, isReady: false, hasGuessed: false,
                 isConnected: true, winStreak: 0, avatar: p.avatar,
               }))
@@ -331,15 +315,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
           ...prev,
           phase: "game-ended",
           team1: payload.players
-            ? payload.players.filter((p: any) => p.team === 1).map((p: any) => ({
-                id: p.id, userId: null, name: p.name, team: p.team as 1 | 2,
+            ? (payload.players as any[]).filter((p: any) => p.team === 1).map((p: any) => ({
+                id: p.id, userId: null, name: p.name, team: 1 as const,
                 score: p.score, isReady: false, hasGuessed: false,
                 isConnected: true, winStreak: 0,
               }))
             : prev.team1,
           team2: payload.players
-            ? payload.players.filter((p: any) => p.team === 2).map((p: any) => ({
-                id: p.id, userId: null, name: p.name, team: p.team as 1 | 2,
+            ? (payload.players as any[]).filter((p: any) => p.team === 2).map((p: any) => ({
+                id: p.id, userId: null, name: p.name, team: 2 as const,
                 score: p.score, isReady: false, hasGuessed: false,
                 isConnected: true, winStreak: 0,
               }))
@@ -360,7 +344,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             player: payload.player,
             message: `Guessed correctly! +${payload.points} pts`,
             timestamp: Date.now(),
-            type: "correct-guess",
+            type: "correct-guess" as const,
           },
         ]);
         if (payload.player.name !== gameState.playerName) {
@@ -377,7 +361,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             player: payload.player,
             message: payload.guess,
             timestamp: Date.now(),
-            type: "wrong-guess",
+            type: "wrong-guess" as const,
           },
         ]);
       });
@@ -390,12 +374,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
             player: payload.player,
             message: payload.message,
             timestamp: payload.timestamp || Date.now(),
-            type: "message",
+            type: "message" as const,
           },
         ]);
       });
 
-      // Drawing events routed through team channels
       sbChan.subscribe("drawing:path-start", () => {});
       sbChan.subscribe("drawing:path-update", (payload: any) => {
         window.dispatchEvent(new CustomEvent("sb-drawing-event", { detail: payload }));
@@ -432,7 +415,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       }));
 
       if (remaining <= 0 && gameState.roomId && !advanceCalledRef.current) {
-        advanceRound(gameState.roomId);
+        advanceRound();
       }
     };
 
@@ -446,14 +429,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
         timerRef.current = null;
       }
     };
-  }, [gameState.round.deadlineAt, gameState.phase, gameState.roomId, advanceRound]);
+  }, [gameState.round.deadlineAt, gameState.phase, gameState.roomId]);
 
   // ── advanceRound ───────────────────────────────────────────
-  const advanceRound = useCallback(async (roomId: string) => {
-    if (advanceCalledRef.current) return;
+  const advanceRound = useCallback(async () => {
+    const roomId = gameState.roomId;
+    if (!roomId || advanceCalledRef.current) return;
     advanceCalledRef.current = true;
 
-    if (gameState.phase === "regular") {
+    const phase = gameState.phase;
+
+    if (phase === "regular") {
       const { data, error } = await supabase.rpc("advance_sb_round", { p_room_id: roomId });
       const result = data as any;
 
@@ -473,17 +459,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         });
         setGameState((prev) => ({
           ...prev,
-          phase: "game-ended",
-          team1: (result.players || []).filter((p: any) => p.team === 1).map((p: any) => ({
-            id: p.id, userId: null, name: p.name, team: 1 as const,
-            score: p.score, isReady: false, hasGuessed: false,
-            isConnected: true, winStreak: 0,
-          })),
-          team2: (result.players || []).filter((p: any) => p.team === 2).map((p: any) => ({
-            id: p.id, userId: null, name: p.name, team: 2 as const,
-            score: p.score, isReady: false, hasGuessed: false,
-            isConnected: true, winStreak: 0,
-          })),
+          phase: "game-ended" as const,
           team1Score: result.team1Score,
           team2Score: result.team2Score,
         }));
@@ -496,7 +472,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         setChatMessages([]);
         setGameState((prev) => ({
           ...prev,
-          phase: "final",
+          phase: "final" as const,
           round: { ...prev.round, number: 1, timeLeft: prev.round.roundTime * 2 },
           finalWords: result.finalWords || [],
           finalWordCount: result.finalWords?.length || 0,
@@ -520,7 +496,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
       setGameState((prev) => ({
         ...prev,
-        phase: "regular",
+        phase: "regular" as const,
         round: {
           number: result.roundNumber,
           team1Drawer: result.team1Drawer,
@@ -539,10 +515,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       channelRef.current.broadcast("canvas-cleared", {});
       window.dispatchEvent(new CustomEvent("sb-canvas-cleared"));
 
-      // Show round-ended briefly
       await new Promise((r) => setTimeout(r, 3000));
-    } else if (gameState.phase === "final") {
-      // Final phase: timer expired
+    } else if (phase === "final") {
       const { data, error } = await supabase.rpc("advance_sb_round", { p_room_id: roomId });
       const result = data as any;
 
@@ -557,7 +531,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         });
         setGameState((prev) => ({
           ...prev,
-          phase: "game-ended",
+          phase: "game-ended" as const,
           team1Score: result.team1Score,
           team2Score: result.team2Score,
           team1FinalProgress: result.team1Final,
@@ -565,7 +539,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         }));
       }
     }
-  }, [gameState.phase]);
+  }, [gameState.roomId, gameState.phase, fetchRoomPlayers]);
 
   // ── Game actions ───────────────────────────────────────────
 
@@ -587,28 +561,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
       let selfId: string | null = null;
       let playerTeam: 1 | 2 | null = null;
-      const { data: authData } = await supabase.auth.getUser();
-      const authUserId = authData.user?.id;
 
-      const players = (state.players || []).map((p: any) => {
-        if (authUserId && p.id === (authUserId ? undefined : undefined)) {
-          // Find by matching isConnected + user lookup below
-        }
-        return {
-          id: p.id,
-          userId: null,
-          name: p.name,
-          team: p.team as 1 | 2,
-          score: p.score,
-          isReady: p.isReady ?? false,
-          hasGuessed: p.hasGuessed ?? false,
-          isConnected: p.isConnected ?? true,
-          winStreak: p.winStreak ?? 0,
-          avatar: p.avatar,
-        };
-      });
+      const players = (state.players || []).map((p: any) => ({
+        id: p.id,
+        userId: null,
+        name: p.name,
+        team: p.team as 1 | 2,
+        score: p.score,
+        isReady: p.isReady ?? false,
+        hasGuessed: p.hasGuessed ?? false,
+        isConnected: p.isConnected ?? true,
+        winStreak: p.winStreak ?? 0,
+        avatar: p.avatar,
+      }));
 
-      // Find self
       for (const p of state.players || []) {
         if (p.name.toLowerCase() === playerName.toLowerCase()) {
           selfId = p.id;
@@ -631,7 +597,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
         gamePin: state.room.gamePin ?? knownGamePin ?? prev.gamePin,
         playerName,
         selfId,
-        authUserId: authUserId ?? null,
         team: playerTeam ?? team ?? prev.team,
         ownerId: state.room.ownerId,
         phase: activePhase,
@@ -853,7 +818,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (result.correct) {
         setChatMessages((prev) => [
           ...prev,
-          createChatMessage(player, `Guessed correctly! +${result.points} pts`, "correct-guess"),
+          {
+            id: Date.now().toString(),
+            player,
+            message: `Guessed correctly! +${result.points} pts`,
+            timestamp: Date.now(),
+            type: "correct-guess" as const,
+          },
         ]);
         channelRef.current.broadcast("correct-guess", {
           player,
@@ -884,8 +855,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
               team1Final: advanceResult.team1Final,
               team2Final: advanceResult.team2Final,
             });
-            // Notify the team about the new drawer and word
-            channelRef.current.broadcastToTeam(gameState.team, "round-started", {
+            channelRef.current.broadcastToTeam?.(gameState.team, "round-started", {
               phase: "final",
               team: gameState.team,
               roundNumber: advanceResult.team1Final + advanceResult.team2Final,
@@ -897,10 +867,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
             });
           }
         } else {
-          void advanceRound(gameState.roomId);
+          void advanceRound();
         }
       } else if (!result.already_guessed) {
-        setChatMessages((prev) => [...prev, createChatMessage(player, guess, "wrong-guess")]);
+        setChatMessages((prev) => [
+          ...prev,
+          { id: Date.now().toString(), player, message: guess, timestamp: Date.now(), type: "wrong-guess" as const },
+        ]);
         channelRef.current.broadcast("wrong-guess", { player, guess });
       }
     },
@@ -919,7 +892,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
       setChatMessages((prev) => [
         ...prev,
-        createChatMessage(player, message, "message", timestamp),
+        { id: timestamp.toString(), player, message, timestamp, type: "message" as const },
       ]);
       channelRef.current.broadcast("chat-message", { player, message, timestamp });
     },
@@ -936,7 +909,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
       if (!isTeamDrawer) return;
 
-      // Broadcast ONLY to own team's drawing channel
       channelRef.current.broadcastToTeam(gameState.team, event.type, event);
     },
     [gameState.selfId, gameState.team, gameState.round],
@@ -953,7 +925,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
     channelRef.current.broadcastToTeam(gameState.team, "canvas-cleared", {});
   }, [gameState.selfId, gameState.team, gameState.round]);
 
-  // ── Computed ──────────────────────────────────────────────
   const isGameActive = gameState.phase !== "lobby" && gameState.phase !== "game-ended";
   const isDrawer =
     gameState.selfId !== null &&
@@ -961,28 +932,28 @@ export function GameProvider({ children }: { children: ReactNode }) {
     ((gameState.team === 1 && gameState.round.team1Drawer?.id === gameState.selfId) ||
      (gameState.team === 2 && gameState.round.team2Drawer?.id === gameState.selfId));
 
+  const ctxValue: SBGameContextType = {
+    gameState,
+    isGameActive,
+    isDrawer,
+    channel: channelRef.current,
+    isConnected,
+    chatMessages,
+    joinRoom,
+    createRoom,
+    leaveRoom,
+    startGame,
+    setReadyState,
+    switchTeam,
+    updateAvatar,
+    sendGuess,
+    sendChatMessage,
+    sendDrawingEvent,
+    clearCanvas,
+  };
+
   return (
-    <SBGameContext.Provider
-      value={{
-        gameState,
-        isGameActive,
-        isDrawer,
-        channel: channelRef.current,
-        isConnected,
-        chatMessages,
-        joinRoom,
-        createRoom,
-        leaveRoom,
-        startGame,
-        setReadyState,
-        switchTeam,
-        updateAvatar,
-        sendGuess,
-        sendChatMessage,
-        sendDrawingEvent,
-        clearCanvas,
-      }}
-    >
+    <SBGameContext.Provider value={ctxValue}>
       {children}
     </SBGameContext.Provider>
   );

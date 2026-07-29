@@ -1,8 +1,9 @@
 -- Scribble Battle — team-based drawing & guessing game
 -- Reuses game_words table for word packs
+-- Idempotent: safe to re-run after partial failure
 
 -- ── Rooms ───────────────────────────────────────────────────────
-CREATE TABLE public.scribble_battle_rooms (
+CREATE TABLE IF NOT EXISTS public.scribble_battle_rooms (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   game_pin TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
@@ -33,18 +34,21 @@ GRANT ALL ON public.scribble_battle_rooms TO service_role;
 
 ALTER TABLE public.scribble_battle_rooms ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "SB rooms viewable by authenticated" ON public.scribble_battle_rooms;
 CREATE POLICY "SB rooms viewable by authenticated"
   ON public.scribble_battle_rooms FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "SB rooms creatable by authenticated" ON public.scribble_battle_rooms;
 CREATE POLICY "SB rooms creatable by authenticated"
   ON public.scribble_battle_rooms FOR INSERT WITH CHECK (true);
 
+DROP POLICY IF EXISTS "SB room owner can update" ON public.scribble_battle_rooms;
 CREATE POLICY "SB room owner can update"
   ON public.scribble_battle_rooms FOR UPDATE
   USING (auth.uid() = owner_id);
 
 -- ── Players ─────────────────────────────────────────────────────
-CREATE TABLE public.scribble_battle_players (
+CREATE TABLE IF NOT EXISTS public.scribble_battle_players (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   room_id UUID NOT NULL REFERENCES public.scribble_battle_rooms(id) ON DELETE CASCADE,
   user_id UUID REFERENCES auth.users(id),
@@ -60,29 +64,33 @@ CREATE TABLE public.scribble_battle_players (
   UNIQUE(room_id, name)
 );
 
-CREATE INDEX sb_players_room_id_idx ON public.scribble_battle_players (room_id);
+CREATE INDEX IF NOT EXISTS sb_players_room_id_idx ON public.scribble_battle_players (room_id);
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.scribble_battle_players TO authenticated;
 GRANT ALL ON public.scribble_battle_players TO service_role;
 
 ALTER TABLE public.scribble_battle_players ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "SB players viewable by authenticated" ON public.scribble_battle_players;
 CREATE POLICY "SB players viewable by authenticated"
   ON public.scribble_battle_players FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "SB players can join rooms" ON public.scribble_battle_players;
 CREATE POLICY "SB players can join rooms"
   ON public.scribble_battle_players FOR INSERT WITH CHECK (true);
 
+DROP POLICY IF EXISTS "SB players can update own row" ON public.scribble_battle_players;
 CREATE POLICY "SB players can update own row"
   ON public.scribble_battle_players FOR UPDATE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "SB players can leave rooms" ON public.scribble_battle_players;
 CREATE POLICY "SB players can leave rooms"
   ON public.scribble_battle_players FOR DELETE
   USING (auth.uid() = user_id);
 
 -- ── Round secrets (reuses pattern from paint-and-guess) ─────────
-CREATE TABLE public.scribble_battle_round_secrets (
+CREATE TABLE IF NOT EXISTS public.scribble_battle_round_secrets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   room_id UUID NOT NULL REFERENCES public.scribble_battle_rooms(id) ON DELETE CASCADE,
   round_number INTEGER NOT NULL,
@@ -95,11 +103,12 @@ GRANT ALL ON public.scribble_battle_round_secrets TO service_role;
 
 ALTER TABLE public.scribble_battle_round_secrets ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "SB round secrets are service_role only" ON public.scribble_battle_round_secrets;
 CREATE POLICY "SB round secrets are service_role only"
   ON public.scribble_battle_round_secrets FOR SELECT USING (false);
 
 -- ── Round history ───────────────────────────────────────────────
-CREATE TABLE public.scribble_battle_rounds (
+CREATE TABLE IF NOT EXISTS public.scribble_battle_rounds (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   room_id UUID NOT NULL REFERENCES public.scribble_battle_rooms(id) ON DELETE CASCADE,
   round_number INTEGER NOT NULL,
@@ -120,11 +129,12 @@ GRANT ALL ON public.scribble_battle_rounds TO service_role;
 
 ALTER TABLE public.scribble_battle_rounds ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "SB round results viewable by authenticated" ON public.scribble_battle_rounds;
 CREATE POLICY "SB round results viewable by authenticated"
   ON public.scribble_battle_rounds FOR SELECT USING (true);
 
 -- ── Canvas checkpoints (two per round — one per team) ───────────
-CREATE TABLE public.scribble_battle_checkpoints (
+CREATE TABLE IF NOT EXISTS public.scribble_battle_checkpoints (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   room_id UUID NOT NULL REFERENCES public.scribble_battle_rooms(id) ON DELETE CASCADE,
   round_number INTEGER NOT NULL,
@@ -139,6 +149,7 @@ GRANT ALL ON public.scribble_battle_checkpoints TO service_role;
 
 ALTER TABLE public.scribble_battle_checkpoints ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "SB room participants can view checkpoints" ON public.scribble_battle_checkpoints;
 CREATE POLICY "SB room participants can view checkpoints"
   ON public.scribble_battle_checkpoints FOR SELECT
   USING (
@@ -159,16 +170,16 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS sb_rooms_touch_updated_at ON public.scribble_battle_rooms;
 CREATE TRIGGER sb_rooms_touch_updated_at
   BEFORE UPDATE ON public.scribble_battle_rooms
   FOR EACH ROW EXECUTE FUNCTION public.tg_sb_rooms_updated_at();
 
 -- ══════════════════════════════════════════════════════════════════
--- RPC Functions
+-- RPC Functions (all use CREATE OR REPLACE, safe to re-run)
 -- ══════════════════════════════════════════════════════════════════
 
 -- ── Create room ─────────────────────────────────────────────────
-DROP FUNCTION IF EXISTS public.create_scribble_battle_room(TEXT, TEXT);
 CREATE OR REPLACE FUNCTION public.create_scribble_battle_room(
   room_name TEXT,
   word_pack TEXT DEFAULT 'classic',
@@ -229,8 +240,6 @@ DECLARE
   target_room public.scribble_battle_rooms%ROWTYPE;
   player_name TEXT;
   avatar_json JSONB;
-  team1_count INT;
-  team2_count INT;
 BEGIN
   SELECT * INTO target_room FROM public.scribble_battle_rooms
   WHERE game_pin = join_scribble_battle_room.p_game_pin;
@@ -268,7 +277,6 @@ END;
 $$;
 
 -- ── Leave room ──────────────────────────────────────────────────
-DROP FUNCTION IF EXISTS public.leave_scribble_battle_room(UUID);
 CREATE OR REPLACE FUNCTION public.leave_scribble_battle_room(p_room_id UUID)
 RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
@@ -343,7 +351,6 @@ END;
 $$;
 
 -- ── Start game ──────────────────────────────────────────────────
-DROP FUNCTION IF EXISTS public.start_scribble_battle(UUID);
 CREATE OR REPLACE FUNCTION public.start_scribble_battle(p_room_id UUID)
 RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
@@ -491,7 +498,7 @@ BEGIN
       WHERE id = room_row.team2_drawer_id;
     END IF;
 
-    -- In regular phase, also award the round win
+    -- In regular phase, award round point to team
     IF room_row.phase = 'regular' THEN
       IF player_team = 1 THEN
         UPDATE public.scribble_battle_rooms SET team1_score = team1_score + 1
@@ -525,16 +532,10 @@ BEGIN
 END;
 $$;
 
--- ── Check if both teams done for regular phase ──────────────────
+-- ── Check if either team has correctly guessed ──────────────────
 CREATE OR REPLACE FUNCTION public.sb_round_resolved(p_room_id UUID)
 RETURNS BOOLEAN LANGUAGE plpgsql STABLE AS $$
-DECLARE
-  room_row public.scribble_battle_rooms%ROWTYPE;
 BEGIN
-  SELECT * INTO room_row FROM public.scribble_battle_rooms
-  WHERE id = p_room_id;
-
-  -- Round resolved if at least one team has a correct guesser
   RETURN EXISTS (
     SELECT 1 FROM public.scribble_battle_players
     WHERE room_id = p_room_id AND has_guessed = true
@@ -543,7 +544,6 @@ END;
 $$;
 
 -- ── Advance round ───────────────────────────────────────────────
-DROP FUNCTION IF EXISTS public.advance_sb_round(UUID);
 CREATE OR REPLACE FUNCTION public.advance_sb_round(p_room_id UUID)
 RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
@@ -596,18 +596,12 @@ BEGIN
       room_row.team1_drawer_id, room_row.team2_drawer_id,
       COALESCE(prev_word, 'unknown'),
       winning_team, correct_guesser_id,
-      COALESCE(
-        (SELECT EXTRACT(EPOCH FROM (now() - (room_row.round_deadline_at - (room_row.round_time * interval '1 second'))))::INT * 1000),
-        0
-      ),
+      GREATEST(0, EXTRACT(EPOCH FROM (room_row.round_deadline_at - now() + (room_row.round_time * interval '1 second')))::INT * 1000),
       CASE WHEN winning_team IS NOT NULL THEN 'correct_guess' ELSE 'timeout' END
     );
 
     -- Check if regular rounds are done → transition to final
     IF room_row.round_number >= room_row.max_regular_rounds THEN
-      -- Transition to final phase
-      final_word_count := array_length(room_row.word_history, 1);
-
       UPDATE public.scribble_battle_rooms
       SET phase = 'final',
           round_number = 1,
@@ -638,16 +632,12 @@ BEGIN
     END IF;
 
     -- Still in regular phase — rotate drawers
-    -- Winning team: drawer stays. Losing team: pick new drawer.
     IF winning_team = 1 THEN
       t1_drawer_id := room_row.team1_drawer_id;
-      -- Increment win streak for team 1 drawer
       UPDATE public.scribble_battle_players SET win_streak = win_streak + 1
       WHERE id = t1_drawer_id;
-      -- Reset team 2 drawer streak
       UPDATE public.scribble_battle_players SET win_streak = 0
       WHERE id = room_row.team2_drawer_id;
-      -- Pick new team 2 drawer
       SELECT id INTO t2_drawer_id FROM public.scribble_battle_players
       WHERE room_id = p_room_id AND team = 2 AND id != room_row.team2_drawer_id
       ORDER BY created_at ASC, random() LIMIT 1;
@@ -711,7 +701,7 @@ BEGIN
     );
 
   ELSE
-    -- Final phase: round ended by timer
+    -- Final phase: timer expired → end game
     t1_final := room_row.team1_final_progress;
     t2_final := room_row.team2_final_progress;
 
@@ -721,7 +711,6 @@ BEGIN
       winning_team := 2;
     END IF;
 
-    -- End game
     UPDATE public.scribble_battle_rooms
     SET is_game_active = false, phase = 'game-ended', last_activity_at = now()
     WHERE id = p_room_id;
@@ -748,7 +737,6 @@ END;
 $$;
 
 -- ── Handle final-round correct guess (team advances independently) ─
-DROP FUNCTION IF EXISTS public.advance_sb_final_word(UUID, INT);
 CREATE OR REPLACE FUNCTION public.advance_sb_final_word(
   p_room_id UUID,
   p_team INT
@@ -776,7 +764,6 @@ BEGIN
   word_list := room_row.word_history;
   total_words := array_length(word_list, 1);
 
-  -- Get current progress
   t1_final := room_row.team1_final_progress;
   t2_final := room_row.team2_final_progress;
 
@@ -805,7 +792,6 @@ BEGIN
     ORDER BY created_at ASC, random() LIMIT 1;
   END IF;
 
-  -- Update team drawer
   IF p_team = 1 THEN
     UPDATE public.scribble_battle_rooms SET team1_drawer_id = new_drawer_id
     WHERE id = p_room_id;
@@ -818,7 +804,7 @@ BEGIN
   UPDATE public.scribble_battle_players SET has_guessed = false
   WHERE room_id = p_room_id AND team = p_team;
 
-  -- Pick next word: use the word at the current progress index
+  -- Pick next word
   current_word_idx := CASE WHEN p_team = 1 THEN t1_final ELSE t2_final END;
   IF current_word_idx <= total_words THEN
     next_word := word_list[current_word_idx];
@@ -826,7 +812,6 @@ BEGIN
 
   -- Check if this team completed
   IF (p_team = 1 AND t1_final >= total_words) OR (p_team = 2 AND t2_final >= total_words) THEN
-    -- Game over — this team wins
     UPDATE public.scribble_battle_rooms
     SET is_game_active = false, phase = 'game-ended', last_activity_at = now()
     WHERE id = p_room_id;
@@ -850,7 +835,6 @@ BEGIN
     );
   END IF;
 
-  -- Find new drawer player info
   SELECT * INTO new_drawer FROM public.scribble_battle_players
   WHERE id = new_drawer_id;
 
@@ -922,7 +906,7 @@ BEGIN
 END;
 $$;
 
--- ── Grant execute ───────────────────────────────────────────────
+-- ── Grant execute (idempotent) ──────────────────────────────────
 GRANT EXECUTE ON FUNCTION public.create_scribble_battle_room(TEXT, TEXT, INT, INT) TO authenticated, anon;
 GRANT EXECUTE ON FUNCTION public.join_scribble_battle_room(TEXT, INT) TO authenticated, anon;
 GRANT EXECUTE ON FUNCTION public.leave_scribble_battle_room(UUID) TO authenticated, anon;

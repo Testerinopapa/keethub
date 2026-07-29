@@ -72,8 +72,13 @@ export function useSBRealtime(): {
           handlers.get(event)!.add(handler);
 
           // Route to appropriate channel
-          if (event.startsWith("drawing:") || event === "canvas-cleared") {
+          if (event.startsWith("drawing:")) {
             // Drawing events come on both team channels
+            team1Channel.on("broadcast", { event }, ({ payload }) => handler(payload));
+            team2Channel.on("broadcast", { event }, ({ payload }) => handler(payload));
+          } else if (event === "canvas-cleared") {
+            // Canvas clears: team-scoped via broadcastToTeam, global via broadcast
+            eventsChannel.on("broadcast", { event }, ({ payload }) => handler(payload));
             team1Channel.on("broadcast", { event }, ({ payload }) => handler(payload));
             team2Channel.on("broadcast", { event }, ({ payload }) => handler(payload));
           } else {
@@ -86,14 +91,7 @@ export function useSBRealtime(): {
         },
 
         broadcast(event, payload) {
-          const isDrawing = event.startsWith("drawing:") || event === "canvas-cleared";
-          if (isDrawing) {
-            // Broadcast to both team drawing channels (drawer only broadcasts to their team in sendDrawingEvent)
-            team1Channel.send({ type: "broadcast", event, payload });
-            team2Channel.send({ type: "broadcast", event, payload });
-          } else {
-            eventsChannel.send({ type: "broadcast", event, payload });
-          }
+          eventsChannel.send({ type: "broadcast", event, payload });
         },
 
         broadcastToTeam(team, event, payload) {

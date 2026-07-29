@@ -42,7 +42,7 @@ function ScribbleBattleApp() {
   return <Room key={gameState.roomId} onBack={handleBack} />;
 }
 
-export default function ScribbleBattleEntry() {
+function ScribbleBattleEntry() {
   return (
     <div className="h-full overflow-hidden">
       <GameProvider>
@@ -51,3 +51,5 @@ export default function ScribbleBattleEntry() {
     </div>
   );
 }
+
+export default ScribbleBattleEntry;

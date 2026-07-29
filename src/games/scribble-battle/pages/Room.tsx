@@ -19,7 +19,7 @@ const sbGameQuery = {
   staleTime: 60_000,
 };
 
-export default function Room({ onBack }: { onBack: () => void }) {
+function Room({ onBack }: { onBack: () => void }) {
   const {
     gameState,
     isGameActive,
@@ -100,6 +100,14 @@ export default function Room({ onBack }: { onBack: () => void }) {
     startGame();
   };
 
+  const handleRematch = () => {
+    if (gameState.team1.length < 2 || gameState.team2.length < 2) {
+      toast.error("Each team needs at least 2 players");
+      return;
+    }
+    startGame();
+  };
+
   const isHost = gameState.ownerId !== null && gameState.ownerId === gameState.authUserId;
   const currentPlayer = [...gameState.team1, ...gameState.team2].find(
     (p) => p.id === gameState.selfId,
@@ -122,7 +130,7 @@ export default function Room({ onBack }: { onBack: () => void }) {
     <div className="flex h-full flex-col overflow-hidden bg-[#FBFDFF] text-[#10204A]">
       {isGameActive && <GameHeader />}
       <RoundSummary />
-      <MatchResults onRematch={handleStartGame} onLeave={handleLeaveRoom} />
+      <MatchResults onRematch={handleRematch} onLeave={handleLeaveRoom} />
 
       {isGameActive ? (
         <GameStage onLeaveRoom={handleLeaveRoom} />
@@ -144,3 +152,5 @@ export default function Room({ onBack }: { onBack: () => void }) {
     </div>
   );
 }
+
+export default Room;

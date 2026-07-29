@@ -146,6 +146,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const channelRef = useRef<SBChannel | null>(null);
   const timerRef = useRef<number | null>(null);
   const advanceCalledRef = useRef(false);
+  const advanceRoundRef = useRef<() => Promise<void>>(async () => {});
+  const roomIdRef = useRef<string | null>(null);
+  const phaseRef = useRef<SBPhase>("lobby");
 
   useEffect(() => {
     return () => {
@@ -179,6 +182,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     let foundSelfId: string | null = null;
     let foundTeam: 1 | 2 | null = null;
+    let foundAuthUserId: string | null = null;
     if (data?.length) {
       const { data: authData } = await supabase.auth.getUser();
       const authUserId = authData.user?.id;
@@ -188,6 +192,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
           foundSelfId = selfRow.id;
           foundTeam = selfRow.team as 1 | 2;
         }
+        foundAuthUserId = authUserId;
       }
     }
 
@@ -195,6 +200,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       ...prev,
       selfId: prev.selfId || foundSelfId || null,
       team: foundTeam ?? prev.team,
+      authUserId: prev.authUserId || foundAuthUserId || null,
       team1: playerList.filter((p) => p.team === 1),
       team2: playerList.filter((p) => p.team === 2),
     }));
@@ -395,6 +401,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
     [joinRoomChannel, gameState.playerName, fetchRoomPlayers],
   );
 
+  // Keep refs in sync with latest state
+  useEffect(() => {
+    roomIdRef.current = gameState.roomId;
+    phaseRef.current = gameState.phase;
+  }, [gameState.roomId, gameState.phase]);
+
+
   // ── Timer ──────────────────────────────────────────────────
   useEffect(() => {
     const deadline = gameState.round.deadlineAt;
@@ -414,8 +427,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
         round: { ...prev.round, timeLeft: remaining },
       }));
 
-      if (remaining <= 0 && gameState.roomId && !advanceCalledRef.current) {
-        advanceRound();
+      if (remaining <= 0 && roomIdRef.current && !advanceCalledRef.current) {
+        advanceRoundRef.current();
       }
     };
 
@@ -541,6 +554,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   }, [gameState.roomId, gameState.phase, fetchRoomPlayers]);
 
+  useEffect(() => {
+    advanceRoundRef.current = advanceRound;
+  }, [advanceRound]);
+
+
   // ── Game actions ───────────────────────────────────────────
 
   const joinRoom = useCallback(
@@ -561,6 +579,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
       let selfId: string | null = null;
       let playerTeam: 1 | 2 | null = null;
+      let userId: string | null = null;
+
+      // Get auth user for self-detection
+      const { data: authData } = await supabase.auth.getUser();
+      userId = authData.user?.id ?? null;
 
       const players = (state.players || []).map((p: any) => ({
         id: p.id,
@@ -576,10 +599,19 @@ export function GameProvider({ children }: { children: ReactNode }) {
       }));
 
       for (const p of state.players || []) {
-        if (p.name.toLowerCase() === playerName.toLowerCase()) {
+        // Prefer matching by userId, fall back to name match
+        if (userId && p.user_id === userId) {
           selfId = p.id;
           playerTeam = p.team as 1 | 2;
-          break;
+        }
+      }
+      if (!selfId) {
+        for (const p of state.players || []) {
+          if (p.name.toLowerCase() === playerName.toLowerCase()) {
+            selfId = p.id;
+            playerTeam = p.team as 1 | 2;
+            break;
+          }
         }
       }
 
@@ -594,6 +626,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       setGameState((prev) => ({
         ...prev,
         roomId,
+        authUserId: prev.authUserId || userId || null,
         gamePin: state.room.gamePin ?? knownGamePin ?? prev.gamePin,
         playerName,
         selfId,

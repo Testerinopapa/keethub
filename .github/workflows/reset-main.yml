@@ -1,0 +1,29 @@
+name: Reset main to working Lovable state
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  reset-main:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download complete repository history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Verify target commit
+        run: |
+          git cat-file -e be6dd7458eb36695ac5ee50b7486d371a6ffc31b^{commit}
+
+      - name: Reset main to working commit
+        env:
+          TARGET_COMMIT: be6dd7458eb36695ac5ee50b7486d371a6ffc31b
+        run: |
+          git push origin \
+            "$TARGET_COMMIT:refs/heads/main" \
+            --force-with-lease=refs/heads/main:$GITHUB_SHA

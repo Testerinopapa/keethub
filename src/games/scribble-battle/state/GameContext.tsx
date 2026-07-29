@@ -407,9 +407,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
     phaseRef.current = gameState.phase;
   }, [gameState.roomId, gameState.phase]);
 
-  useEffect(() => {
-    advanceRoundRef.current = advanceRound;
-  }, [advanceRound]);
 
   // ── Timer ──────────────────────────────────────────────────
   useEffect(() => {
@@ -556,6 +553,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
       }
     }
   }, [gameState.roomId, gameState.phase, fetchRoomPlayers]);
+
+  useEffect(() => {
+    advanceRoundRef.current = advanceRound;
+  }, [advanceRound]);
+
 
   // ── Game actions ───────────────────────────────────────────
 

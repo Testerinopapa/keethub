@@ -749,10 +749,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
     async (isReady: boolean) => {
       if (!gameState.roomId || !channelRef.current) return;
 
-      await supabase.rpc("set_sb_player_ready", {
+      const { data, error } = await supabase.rpc("set_sb_player_ready", {
         room_id: gameState.roomId,
         is_ready: isReady,
       });
+
+      if (error || !(data as any)?.success) {
+        toast.error((data as any)?.error || "Failed to update ready state");
+        return;
+      }
 
       setGameState((prev) => {
         const updateTeam = (players: SBPlayer[]) =>
@@ -774,13 +779,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
     async (team: 1 | 2) => {
       if (!gameState.roomId || !channelRef.current) return;
 
-      const { error } = await supabase.rpc("switch_sb_team", {
+      const { data, error } = await supabase.rpc("switch_sb_team", {
         room_id: gameState.roomId,
         new_team: team,
       });
 
-      if (error) {
-        toast.error("Failed to switch team");
+      if (error || !(data as any)?.success) {
+        toast.error((data as any)?.error || "Failed to switch team");
         return;
       }
 

@@ -19,7 +19,7 @@ const sbGameQuery = {
   staleTime: 60_000,
 };
 
-export default function Room({ onBack }: { onBack: () => void }) {
+function Room({ onBack }: { onBack: () => void }) {
   const {
     gameState,
     isGameActive,
@@ -152,3 +152,5 @@ export default function Room({ onBack }: { onBack: () => void }) {
     </div>
   );
 }
+
+export default Room;

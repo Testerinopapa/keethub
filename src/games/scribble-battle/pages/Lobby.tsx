@@ -12,7 +12,7 @@ interface LobbyProps {
   onEnterRoom: () => void;
 }
 
-export default function Lobby({ onEnterRoom }: LobbyProps) {
+function Lobby({ onEnterRoom }: LobbyProps) {
   const navigate = useNavigate();
   const { createRoom, joinRoom } = useSBGame();
 
@@ -156,3 +156,5 @@ export default function Lobby({ onEnterRoom }: LobbyProps) {
     </div>
   );
 }
+
+export default Lobby;

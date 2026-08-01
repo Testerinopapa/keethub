@@ -105,9 +105,9 @@ function Room({ onBack }: { onBack: () => void }) {
       toast.error("Each team needs at least 2 players");
       return;
     }
+    submittedRoomRef.current = null;
     startGame();
   };
-
   const isHost = gameState.ownerId !== null && gameState.ownerId === gameState.authUserId;
   const currentPlayer = [...gameState.team1, ...gameState.team2].find(
     (p) => p.id === gameState.selfId,
